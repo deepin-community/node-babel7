@@ -1,0 +1,7 @@
+regexpu-core
+rollup-plugin-node-polyfills
+to-fast-properties
+@types/lodash
+@types/node
+unicode-match-property-ecmascript
+unicode-match-property-value-ecmascript

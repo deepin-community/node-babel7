@@ -1,0 +1,14 @@
+babel can no longer be built by npm as they use yarn specific features in
+package.json. So use yarnpkg everywhere.
+
+--- a/babel-plugin-dynamic-import-node/package.json
++++ b/babel-plugin-dynamic-import-node/package.json
+@@ -8,7 +8,7 @@
+   },
+   "scripts": {
+     "clean": "rimraf lib",
+-    "prebuild": "npm run clean",
++    "prebuild": "yarnpkg clean",
+     "build": "babel src --out-dir lib",
+     "pretest": "npm run lint",
+     "test": "npm run tests-only",

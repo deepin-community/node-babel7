@@ -1,0 +1,15 @@
+#!/bin/sh
+
+set -e
+
+# Transition
+update-alternatives --remove babeljs.1.gz /usr/share/man/man1/babeljs-7.1.gz || true
+update-alternatives --remove babeljs-node.1.gz /usr/share/man/man1/babeljs-7-node.1.gz || true
+
+update-alternatives --install /usr/bin/babeljs babeljs /usr/bin/babeljs-7 30
+update-alternatives --install /usr/bin/babeljs-external-helpers babeljs-external-helpers /usr/bin/babeljs-7-external-helpers 30
+update-alternatives --install /usr/bin/babeljs-node babeljs-node /usr/bin/babeljs-7-node 30
+update-alternatives --install /usr/bin/babeljs-parser babeljs-parser /usr/bin/babeljs-7-parser 30
+
+#DEBHELPER#
+exit 0

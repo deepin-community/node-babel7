@@ -1,0 +1,12 @@
+Description: ignore charcode ts definitions
+Author: Xavier Guimard <yadd@debian.org>
+Forwarded: no
+Last-Update: 2021-01-03
+
+--- a/packages/babel-helper-validator-identifier/src/identifier.ts
++++ b/packages/babel-helper-validator-identifier/src/identifier.ts
+@@ -1,3 +1,4 @@
++// @ts-ignore
+ import * as charCodes from "charcodes";
+ 
+ // ## Character categories

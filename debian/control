@@ -1,0 +1,149 @@
+Source: node-babel7
+Maintainer: Debian Javascript Maintainers <pkg-javascript-devel@lists.alioth.debian.org>
+Uploaders: Pirate Praveen <praveen@debian.org>
+Section: javascript
+#Testsuite: autopkgtest-pkg-nodejs
+Priority: optional
+Build-Depends: debhelper-compat (= 13)
+ , dh-sequence-nodejs (>= 0.9.78~)
+ , gulp (>= 4)
+ , help2man
+ , jq
+ , node-babel7 (>= 7.9.6) <!pkg.node-babel7.npm>
+ , node-browserslist (>= 4.16~)
+ , node-chalk (>= 4~)
+ , node-cheerio
+ , node-clean-css
+ , node-commander (>= 4.1.1)
+ , node-core-js (>= 3.1.1~)
+ , node-css-select
+ , node-css-selector-tokenizer
+ , node-debbundle-acorn
+ , node-debug
+ , node-globals
+ , node-gulp-babel (>= 8.0~)
+ , node-gulp-newer
+ , node-gulp-plumber
+ , node-gulp-rename
+ , node-gulp-util
+ , node-he
+ , node-htmlparser2
+ , node-invariant
+ , node-is-windows
+ , node-jest-worker
+ , node-jsdom
+ , node-leven (>= 3.1.0+~cs1.1.1)
+ , node-liftoff (>= 3.1.0-4~)
+ , node-lodash (>= 4.17.19+dfsg1~)
+ , node-make-error
+ , node-merge-stream
+ , node-multimatch
+ , node-output-file-sync
+ , node-recast
+ , node-regenerator-transform (>= 0.14~)
+ , node-rimraf
+ , node-rollup-plugin-babel (>= 5.2.0)
+ , node-rollup-plugin-commonjs (>= 13.0.0)
+ , node-rollup-plugin-inject
+ , node-rollup-plugin-json (>= 4.1.0)
+ , node-rollup-plugin-node-resolve (>= 9.0.0)
+ , node-rollup-plugin-node-polyfills
+ , node-rollup-plugin-replace (>= 2.3.3)
+ , node-rollup-plugin-terser
+ , node-semver (>= 7.0~)
+ , node-serialize-javascript
+# for embedded debian/build_modules/@rollup/plugin-node-resolve
+ , node-deepmerge
+# for debian/build_modules/webpack-stream
+ , node-supports-color (>= 5.3~)
+ , node-through
+ , node-through2
+ , node-to-fast-properties
+ , node-typescript
+ , node-vinyl-fs (>= 2.4.4-2~)
+ , yarnpkg <pkg.node-babel7.yarnpkg>
+ , git <pkg.node-babel7.yarnpkg>
+ , rollup (>= 2.0~)
+ , uglifyjs
+ , webpack
+Standards-Version: 4.6.0
+Vcs-Browser: https://salsa.debian.org/js-team/node-babel
+Vcs-Git: https://salsa.debian.org/js-team/node-babel.git
+Homepage: https://babeljs.io/
+Rules-Requires-Root: no
+
+Package: node-babel7
+Architecture: all
+Depends: ${misc:Depends}
+ , node-babel7-runtime (= ${binary:Version})
+ , node-browserslist (>= 4.16~)
+ , node-chalk (>= 4~)
+ , node-commander (>= 4.1.1)
+ , node-convert-source-map
+ , node-core-js (>= 3.1.1~)
+ , node-debug
+ , node-esutils
+ , node-find-cache-dir
+ , node-fs-readdir-recursive (>= 1.1.0~)
+ , node-glob
+ , node-globals
+ , node-js-tokens
+ , node-jsesc
+ , node-json5
+ , node-lodash (>= 4.17.19+dfsg1~)
+ , node-make-dir
+ , node-quick-lru
+ , node-regenerator-transform (>= 0.14~)
+ , node-regexpu-core
+ , node-resolve
+ , node-semver (>= 7.0~)
+ , node-slash
+ , node-source-map
+ , node-source-map-support
+ , node-to-fast-properties
+ , node-v8flags
+ , nodejs
+Breaks: node-babel-core (<< 6.26.0+repack-3~)
+Provides: ${babel:Provides}, babeljs (= ${binary:Version})
+Description: Babel command line
+ Babel is a JavaScript compiler to use next generation JavaScript, today.
+ .
+ ES2015 and beyond: Babel has support for the latest version of JavaScript
+ through syntax transformers. These plugins allow you to use new syntax, right
+ now without waiting for browser support.
+
+Package: node-babel7-runtime
+Architecture: all
+Depends: ${misc:Depends}
+ , node-regenerator-runtime
+Provides: ${babel:depsProvides}
+Breaks: node-babel7 (<< 7.12.12~)
+Description: Babel modular runtime helpers
+ @babel/runtime is meant to be used as a runtime dependency along with the
+ Babel plugin @babel/plugin-transform-runtime.
+
+Package: node-babel7-standalone
+Architecture: all
+Depends: ${misc:Depends}
+Provides: ${babel:depsProvides}
+Breaks: node-babel7 (<< 7.12.12~)
+Multi-Arch: foreign
+Description: Standalone build of Babel for use in browsers and other non-Node.js environments
+ @babel/standalone provides a standalone build of Babel for use in browsers
+ and other non-Node.js environments.If you're using Babel in production, you
+ should normally not use @babel/standalone. Instead, you should use a build
+ system running on Node.js, such as Webpack, Rollup, or Parcel, to transpile
+ your JS ahead of time.
+ .
+ However, there are some valid use cases for @babel/standalone:
+  * It provides an easy, convenient way to prototype with Babel. Using
+    @babel/standalone, you can get started using Babel with just a simple
+    script tag in your HTML.
+  * Sites that compile user-provided JavaScript in real-time, like JSFiddle,
+    JS Bin, the REPL on the Babel site, JSitor, etc.
+  * Apps that embed a JavaScript engine such as V8 directly, and want to use
+    Babel for compilation
+  * Apps that want to use JavaScript as a scripting language for extending the
+    app itself, including all the goodies that ES2015 provides.
+  * Other non-Node.js environments (ReactJS.NET, ruby-babel-transpiler,
+    php-babel-transpiler, etc).

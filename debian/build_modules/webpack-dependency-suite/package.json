@@ -1,0 +1,145 @@
+{
+  "_args": [
+    [
+      "webpack-dependency-suite@2.4.5",
+      "/home/xavier/dev/debian/src/pkg-js/packages/node-babel"
+    ]
+  ],
+  "_development": true,
+  "_from": "webpack-dependency-suite@2.4.5",
+  "_id": "webpack-dependency-suite@2.4.5",
+  "_inBundle": false,
+  "_integrity": "sha512-UyAXvIu12XjcuiUkO1QQ7xRC/rpOyCfdCOhlhgJrLkt2FqK/l0dhynVxLRHO/QyGoNpfoO0N7k+m/LTxfriwrQ==",
+  "_location": "/webpack-dependency-suite",
+  "_phantomChildren": {},
+  "_requested": {
+    "type": "version",
+    "registry": true,
+    "raw": "webpack-dependency-suite@2.4.5",
+    "name": "webpack-dependency-suite",
+    "escapedName": "webpack-dependency-suite",
+    "rawSpec": "2.4.5",
+    "saveSpec": null,
+    "fetchSpec": "2.4.5"
+  },
+  "_requiredBy": [
+    "#DEV:/"
+  ],
+  "_resolved": "https://registry.npmjs.org/webpack-dependency-suite/-/webpack-dependency-suite-2.4.5.tgz",
+  "_spec": "2.4.5",
+  "_where": "/home/xavier/dev/debian/src/pkg-js/packages/node-babel",
+  "aurelia": {
+    "_note": "this is only here for testing purposes",
+    "build": {
+      "resources": [
+        "resources/hello",
+        {
+          "path": "resources/double",
+          "lazy": true,
+          "chunk": "double"
+        },
+        [
+          "resources/triple"
+        ],
+        "resources/glo*b/test-*.js",
+        "root-most",
+        {
+          "path": "aurelia-templating-resources/signal-binding-behavior",
+          "lazy": true,
+          "chunk": "aurelia"
+        }
+      ]
+    }
+  },
+  "author": {
+    "name": "Bazyli Brzóska",
+    "email": "bazyli.brzoska@gmail.com"
+  },
+  "bugs": {
+    "url": "https://github.com/niieani/webpack-dependency-suite/issues"
+  },
+  "dependencies": {
+    "@types/acorn": "^4.0.2",
+    "@types/cheerio": "^0.22.1",
+    "@types/debug": "^0.0.29",
+    "@types/enhanced-resolve": "^3.0.3",
+    "@types/escape-string-regexp": "^0.0.30",
+    "@types/estree": "0.0.35",
+    "@types/lodash": "^4.14.67",
+    "@types/node": "^8.0.0",
+    "@types/semver": "^5.3.32",
+    "@types/webpack": "^3.0.0",
+    "acorn": "^5.0.3",
+    "cheerio": "^1.0.0-rc.1",
+    "debug": "^3.0.0",
+    "escape-string-regexp": "^1.0.5",
+    "html-loader": "^0.4.5",
+    "loader-utils": "^1.1.0",
+    "lodash": "^4.17.4",
+    "semver": "^5.3.0",
+    "source-map": "^0.5.6"
+  },
+  "description": "A set of Webpack plugins, loaders and utilities designed for advanced dependency resolution",
+  "devDependencies": {
+    "@types/jest": "^20.0.0",
+    "aurelia-templating-resources": "^1.4.0",
+    "chromedriver": "^2.30.1",
+    "enhanced-resolve": "^3.1.0",
+    "file-loader": "^0.11.2",
+    "html-webpack-plugin": "^2.29.0",
+    "http-server": "^0.10.0",
+    "jasmine": "^2.6.0",
+    "jest": "^20.0.4",
+    "rimraf": "^2.6.1",
+    "selenium-webdriver": "^3.4.0",
+    "semantic-release": "^6.3.2",
+    "ts-node": "^3.1.0",
+    "typescript": "^2.4.1",
+    "webpack": "^3.0.0",
+    "webpack-dev-server": "^2.5.0",
+    "webpack-sources": "^1.0.1"
+  },
+  "homepage": "https://github.com/niieani/webpack-dependency-suite#readme",
+  "jest": {
+    "moduleFileExtensions": [
+      "ts",
+      "tsx",
+      "js"
+    ],
+    "transform": {
+      "^.+\\.(ts|tsx)$": "<rootDir>/test/preprocessor.js"
+    },
+    "testRegex": "\\.spec\\.(ts|tsx)$"
+  },
+  "keywords": [
+    "webpack",
+    "toolkit",
+    "suite",
+    "plugin",
+    "loader",
+    "require.include"
+  ],
+  "license": "MIT",
+  "main": "index.js",
+  "name": "webpack-dependency-suite",
+  "peerDependencies": {
+    "enhanced-resolve": "^3.0.0"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/niieani/webpack-dependency-suite.git"
+  },
+  "scripts": {
+    "build": "tsc -p . -t es5 --listFiles",
+    "debug": "node --harmony_async_await --inspect --debug-brk ./node_modules/webpack/bin/webpack.js --watch",
+    "dev": "webpack-dev-server --inline --content-base build/",
+    "prebuild": "rimraf ./loaders/*.js ./plugins/*.js ./utils/*.js ./loaders/*.d.ts ./plugins/*.d.ts ./utils/*.d.ts",
+    "semantic-release": "semantic-release pre && npm publish && semantic-release post",
+    "test": "jest",
+    "test:e2e": "jasmine test/e2e.spec.js",
+    "test:unit": "jest",
+    "webpack": "node --harmony_async_await ./node_modules/webpack/bin/webpack.js",
+    "webpack:build": "rimraf ./test-fixtures/webpack-dist && node --harmony_async_await ./node_modules/webpack/bin/webpack.js"
+  },
+  "version": "2.4.5"
+}

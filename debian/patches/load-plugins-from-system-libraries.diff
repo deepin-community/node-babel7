@@ -1,0 +1,21 @@
+Description: add Debian paths to find babel plugins
+Author: Xavier Guimard <yadd@debian.org>
+Forwarded: not-needed
+Last-Update: 2020-12-13
+
+--- a/packages/babel-core/src/config/files/plugins.js
++++ b/packages/babel-core/src/config/files/plugins.js
+@@ -101,6 +101,13 @@
+   } catch (e) {
+     if (e.code !== "MODULE_NOT_FOUND") throw e;
+ 
++    try {
++      return require.resolve(standardizedName, {
++        paths: ['/usr/share/nodejs','/usr/lib/nodejs'],
++      });
++    } catch (e) {
++      // Nothing to do, let's continue
++    }
+     if (standardizedName !== name) {
+       let resolvedOriginal = false;
+       try {

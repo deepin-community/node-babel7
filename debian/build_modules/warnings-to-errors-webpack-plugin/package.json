@@ -1,0 +1,66 @@
+{
+  "_args": [
+    [
+      "warnings-to-errors-webpack-plugin@2.0.0",
+      "/home/xavier/dev/debian/src/pkg-js/packages/node-babel"
+    ]
+  ],
+  "_development": true,
+  "_from": "warnings-to-errors-webpack-plugin@2.0.0",
+  "_id": "warnings-to-errors-webpack-plugin@2.0.0",
+  "_inBundle": false,
+  "_integrity": "sha512-0Girb3F5xc5U1TpYMiLDcie5oB+Ko2EuujOYyS3aXpKS4Yp264WkIuJ+0vF8wnmkDkmZAOBxahBedEL0mLjHQA==",
+  "_location": "/warnings-to-errors-webpack-plugin",
+  "_phantomChildren": {},
+  "_requested": {
+    "type": "version",
+    "registry": true,
+    "raw": "warnings-to-errors-webpack-plugin@2.0.0",
+    "name": "warnings-to-errors-webpack-plugin",
+    "escapedName": "warnings-to-errors-webpack-plugin",
+    "rawSpec": "2.0.0",
+    "saveSpec": null,
+    "fetchSpec": "2.0.0"
+  },
+  "_requiredBy": [
+    "#DEV:/"
+  ],
+  "_resolved": "https://registry.npmjs.org/warnings-to-errors-webpack-plugin/-/warnings-to-errors-webpack-plugin-2.0.0.tgz",
+  "_spec": "2.0.0",
+  "_where": "/home/xavier/dev/debian/src/pkg-js/packages/node-babel",
+  "author": {
+    "name": "Taehwan Noh",
+    "email": "taehwanno.dev@gmail.com"
+  },
+  "bugs": {
+    "url": "https://github.com/taehwanno/warnings-to-errors-webpack-plugin/issues"
+  },
+  "description": "Change every warning as error to ensure safe build",
+  "devDependencies": {
+    "cross-env": "^5.1.3",
+    "jest": "^22.1.4",
+    "should": "^13.2.1"
+  },
+  "homepage": "https://github.com/taehwanno/warnings-to-errors-webpack-plugin",
+  "keywords": [
+    "webpack",
+    "plugin",
+    "webpack-plugin"
+  ],
+  "license": "MIT",
+  "main": "index.js",
+  "name": "warnings-to-errors-webpack-plugin",
+  "peerDependencies": {
+    "webpack": "^2.2.0-rc || ^3 || ^4"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/taehwanno/warnings-to-errors-webpack-plugin.git"
+  },
+  "scripts": {
+    "test": "cross-env NODE_ENV=test jest",
+    "test:coverage": "yarn test --coverage",
+    "test:watch": "yarn test --watch"
+  },
+  "version": "2.0.0"
+}

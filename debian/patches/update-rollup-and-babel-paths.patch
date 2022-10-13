@@ -1,0 +1,40 @@
+Description: update babel and rollup paths to use Debian packages files
+Author: Xavier Guimard <yadd@debian.org>
+Forwarded: not-needed
+Last-Update: 2021-01-05
+
+--- a/Gulpfile.js
++++ b/Gulpfile.js
+@@ -240,6 +240,7 @@
+         input,
+         external,
+         onwarn(warning, warn) {
++          if (warning.code === 'THIS_IS_UNDEFINED') return;
+           if (warning.code !== "CIRCULAR_DEPENDENCY") {
+             warn(warning);
+             // https://github.com/babel/babel/pull/12011#discussion_r540434534
+@@ -272,6 +273,11 @@
+               "packages/babel-preset-env/data/*.js",
+               // Rollup doesn't read export maps, so it loads the cjs fallback
+               "packages/babel-compat-data/*.js",
++              /nodejs/,
++              "../**/nodejs/**",
++              "/usr/share/**",
++              "/usr/lib/**",
++              "debian/**",
+             ],
+           }),
+           rollupJson(),
+--- a/babel.config.js
++++ b/babel.config.js
+@@ -36,6 +36,10 @@
+     "codemods/*/test",
+     "eslint/*/src",
+     "eslint/*/test",
++    "../**/nodejs/*/",
++    "/usr/share/nodejs/*/",
++    "/usr/lib/nodejs/*/",
++    "/usr/share/javascript/*/",
+   ];
+ 
+   switch (env) {

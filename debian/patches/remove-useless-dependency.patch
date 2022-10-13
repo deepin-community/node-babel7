@@ -1,0 +1,17 @@
+Description: node-environment-flags isn't required anywhere
+ and it's just a polyfill of process.allowedNodeEnvironmentFlags
+Author: Xavier Guimard <yadd@debian.org>
+Bug-Debian: https://bugs.debian.org/977232
+Forwarded: no
+Last-Update: 2020-12-17
+
+--- a/packages/babel-node/package.json
++++ b/packages/babel-node/package.json
+@@ -27,7 +27,6 @@
+     "commander": "^4.0.1",
+     "core-js": "^3.2.1",
+     "lodash": "^4.17.19",
+-    "node-environment-flags": "^1.0.5",
+     "regenerator-runtime": "^0.13.4",
+     "v8flags": "^3.1.1"
+   },

@@ -1,0 +1,17 @@
+Description: add missing build dependency to yarn in npm build profile
+Author: Xavier Guimard <yadd@debian.org>
+Forwarded: no
+Last-Update: 2020-05-19
+
+--- a/pirates/package.json
++++ b/pirates/package.json
+@@ -49,7 +49,8 @@
+     "prettier": "^1.16.4",
+     "rewire": "^4.0.1",
+     "rimraf": "^2.6.1",
+-    "semantic-release": "^15.7.0"
++    "semantic-release": "^15.7.0",
++    "yarn": "*"
+   },
+   "license": "MIT",
+   "bugs": {

@@ -1,0 +1,26 @@
+{
+    "name": "@types/babel__standalone",
+    "version": "7.1.3",
+    "description": "TypeScript definitions for @babel/standalone",
+    "license": "MIT",
+    "contributors": [
+        {
+            "name": "Matheus Goncalves da Silva",
+            "url": "https://github.com/PlayMa256",
+            "githubUsername": "PlayMa256"
+        }
+    ],
+    "main": "",
+    "types": "index.d.ts",
+    "repository": {
+        "type": "git",
+        "url": "https://github.com/DefinitelyTyped/DefinitelyTyped.git",
+        "directory": "types/babel__standalone"
+    },
+    "scripts": {},
+    "dependencies": {
+        "@babel/core": "^7.1.0"
+    },
+    "typesPublisherContentHash": "7466544f9068c71b25fe32e48d3d1641e193c24a163aa28fd7ad96a61a0ac03c",
+    "typeScriptVersion": "3.4"
+}

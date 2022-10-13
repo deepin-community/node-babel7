@@ -1,0 +1,38 @@
+Description: fix large numbers
+Author: Xavier Guimard <yadd@debian.org>
+Forwarded: not-needed
+Last-Update: 2020-05-19
+
+--- a/packages/babel-core/src/transformation/normalize-file.js
++++ b/packages/babel-core/src/transformation/normalize-file.js
+@@ -12,7 +12,7 @@
+ import parser from "../parser";
+ 
+ const debug = buildDebug("babel:transform:file");
+-const LARGE_INPUT_SOURCEMAP_THRESHOLD = 1_000_000;
++const LARGE_INPUT_SOURCEMAP_THRESHOLD = 1000000;
+ 
+ export type NormalizedFile = {
+   code: string,
+--- a/packages/babel-generator/src/index.js
++++ b/packages/babel-generator/src/index.js
+@@ -79,7 +79,7 @@
+   }
+ 
+   if (format.compact === "auto") {
+-    format.compact = code.length > 500_000; // 500KB
++    format.compact = code.length > 500000; // 500KB
+ 
+     if (format.compact) {
+       console.error(
+--- a/packages/babel-traverse/src/context.js
++++ b/packages/babel-traverse/src/context.js
+@@ -117,7 +117,7 @@
+       // this path no longer belongs to the tree
+       if (path.key === null) continue;
+ 
+-      if (testing && queue.length >= 10_000) {
++      if (testing && queue.length >= 10000) {
+         this.trap = true;
+       }
+ 

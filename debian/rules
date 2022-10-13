@@ -1,0 +1,124 @@
+#!/usr/bin/make -f
+# -*- makefile -*-
+
+# Uncomment this to turn on verbose mode.
+#export DH_VERBOSE=1
+
+include /usr/share/dpkg/pkg-info.mk
+
+GULP=/usr/bin/gulp
+BABELJSDESC="The compiler for writing next generation JavaScript"
+BABELJSNODEDESC="CLI that works exactly the same as the Node.js CLI, with the added benefit of compiling with Babel presets and plugins before running it"
+EXTMODULES=$(shell perl -lne 'print $$1 if/component=([^,]*)/' debian/watch)
+
+%:
+	dh $@
+
+override_dh_auto_build:
+ifeq (,$(filter pkg.node-babel7.yarnpkg,$(DEB_BUILD_OPTIONS) $(DEB_BUILD_PROFILES)))
+	#rm -f node_modules/@babel/code-frame
+	#rm -f node_modules/@babel/preset-modules
+	mv node_modules/@babel node_modules/.babel
+	mkdir node_modules/@babel
+	ln -s /usr/share/nodejs/@babel/runtime node_modules/@babel/
+	ln -s /usr/share/nodejs/@babel/compat-data node_modules/@babel/
+	# Build @babel/plugin-dynamic-import-node
+	cd babel-plugin-dynamic-import-node && babeljs-7 src --out-dir lib
+	# Build @babel/preset-modules
+	cd babel-preset-modules && babeljs src --presets '@babel/preset-env' -d lib --ignore '**/*.test.js'
+	# Build charcodes
+	cd charcodes; \
+	for D in ./packages/*; do \
+		mkdir "$$D/lib"; \
+		babeljs-7 "$$D/src/index.js" -o "$$D/lib/index.js" --env-name "cjs"; \
+		babeljs-7 "$$D/src/index.js" -o "$$D/lib/index.mjs" --env-name "esm"; \
+	done
+	# Build babel except standalone
+	set -e; for i in $(EXTMODULES); do \
+		NAME=`jq -r .name $$i/package.json`; \
+		if test "$$NAME" != "null"; then \
+			rm -rf node_modules/$$NAME; \
+			mv $$i node_modules/$$NAME; \
+			echo mv node_modules/$$NAME $$i >> debian/restore.sh; \
+		fi; \
+	done
+	if [ -e charcodes ]; then \
+		mv charcodes node_modules/.charcodes; \
+		for i in `ls node_modules/.charcodes/packages/`; do \
+			ln -vs .charcodes/packages/$$i node_modules/$$i; \
+		done; \
+		echo mv node_modules/.charcodes charcodes >> debian/restore.sh; \
+	fi
+	make build YARN=''
+	#mv node_modules/.babel/* node_modules/@babel/
+	for i in `ls packages/`; do \
+		NAME=`jq -r .name packages/$$i/package.json`; \
+		if [ -e node_modules/$$NAME ]; then \
+			echo -n ''; \
+		else \
+			ln -s ../../packages/$$i node_modules/$$NAME; \
+		fi; \
+	done
+	make tscheck YARN=''
+	gulp bundle-dts
+	make build-typescript-legacy-typings
+	sh -e debian/restore.sh
+	rm -f debian/restore.sh
+	# Build pirates
+	mv node_modules tmp_modules
+	cd pirates && sh -ex ../debian/nodejs/pirates/build
+	mv tmp_modules node_modules
+else
+	rm -rf node_modules
+	HOME=`pwd` yarnpkg install
+	make build build-dist
+	cd babel-plugin-dynamic-import-node && HOME=`pwd` yarnpkg install && yarnpkg build
+	cd charcodes && HOME=`pwd` yarnpkg install && ./scripts/build.sh
+	cd pirates && HOME=`pwd` yarnpkg install && yarnpkg build
+endif
+	help2man --no-info \
+		--version-string $(DEB_VERSION_UPSTREAM) \
+		-n $(BABELJSDESC) \
+		packages/babel-cli/bin/babel.js > babeljs.1
+	help2man --no-info \
+		--version-string $(DEB_VERSION_UPSTREAM) \
+		-n $(BABELJSNODEDESC) \
+		packages/babel-node/bin/babel-node.js > babeljs-node.1
+
+ifeq (,$(filter nocheck,$(DEB_BUILD_OPTIONS) $(DEB_BUILD_PROFILES)))
+override_dh_auto_test:
+endif
+
+override_dh_install:
+	dh_install
+	find debian -name .npmignore -delete
+	find debian -name .gitignore -delete
+	find debian -name tsconfig.tsbuildinfo -delete
+	cd debian/node-babel7 && rm -rf `cat ../../debian/node-babel7-*.install|sed 's/.* //g'`
+
+override_dh_gencontrol:
+	BABELPROVIDES=`grep -sh 'nodejs:Provides' debian/*.substvars|head -n1|sed -e 's/nodejs:Provides=//'`; \
+	set -e; \
+	for m in `cd debian && ls node-babel7-*.install`; do \
+		bundle=''; \
+		mod=$${m%.install}; \
+		for p in `cat debian/$$mod.install`; do \
+			pversion=`jq -r .version debian/$$mod/$$p/package.json` ; \
+			pname=`jq -r .name debian/$$mod/$$p/package.json` ; \
+			pname=node-`echo $$pname|sed -e 's/^.types./types-/' -e 's/.babel\//babel-/' -e 's/__/-/g'`; \
+			echo "Found $$pname ($$pversion) in $$mod"; \
+			bundle="$$pname (=$$pversion-1), $$bundle"; \
+			BABELPROVIDES=`echo $$BABELPROVIDES|sed -e "s/ *$$pname [^,]*,//g"`; \
+		done; \
+		echo dh_gencontrol -p$$mod -- -Vbabel:depsProvides="$$bundle"; \
+		dh_gencontrol -p$$mod -- -Vbabel:depsProvides="$$bundle"; \
+	done; \
+	echo "babel7 Provides value: $$BABELPROVIDES"; \
+	dh_gencontrol -pnode-babel7 -- -Vbabel:Provides="$$BABELPROVIDES"
+
+override_dh_fixperms:
+	dh_fixperms
+	chmod +x debian/node-babel7/usr/share/nodejs/@babel/cli/bin/babel-external-helpers.js \
+		debian/node-babel7/usr/share/nodejs/@babel/cli/bin/babel.js \
+		debian/node-babel7/usr/share/nodejs/@babel/node/bin/babel-node.js \
+		debian/node-babel7/usr/share/nodejs/@babel/parser/bin/babel-parser.js

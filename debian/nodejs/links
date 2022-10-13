@@ -1,0 +1,4 @@
+@babel/cli/bin/babel.js /usr/bin/babeljs-7
+@babel/node/bin/babel-node.js /usr/bin/babeljs-7-node
+@babel/cli/bin/babel-external-helpers.js /usr/bin/babeljs-7-external-helpers
+@babel/parser/bin/babel-parser.js /usr/bin/babeljs-7-parser

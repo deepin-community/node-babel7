@@ -1,0 +1,21 @@
+#!/bin/sh
+
+set -e
+
+case "$1" in
+	remove|deconfigure)
+		update-alternatives --remove babeljs /usr/bin/babeljs-7
+		update-alternatives --remove babeljs-external-helpers /usr/bin/babeljs-7-external-helpers
+		update-alternatives --remove babeljs-node /usr/bin/babeljs-7-node
+		update-alternatives --remove babeljs-parser /usr/bin/babeljs-7-parser
+		;;
+	upgrade|failed-upgrade)
+		;;
+	*)
+		echo "prerm called with unknown argument \`$1'" >&2
+		exit 0
+		;;
+esac
+
+#DEBHELPER#
+exit 0
