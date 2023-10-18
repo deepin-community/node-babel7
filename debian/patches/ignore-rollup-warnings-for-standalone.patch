@@ -1,0 +1,16 @@
+Description: patch applied to build standalone
+Author: Yadd <yadd@debian.org>
+Forwarded: not-needed
+Last-Update: 2022-04-09
+
+--- a/Gulpfile.mjs
++++ b/Gulpfile.mjs
+@@ -390,7 +390,7 @@
+             console.warn(warning);
+ 
+             // https://github.com/babel/babel/pull/12011#discussion_r540434534
+-            throw new Error("Rollup aborted due to warnings above");
++            //throw new Error("Rollup aborted due to warnings above");
+           },
+           plugins: [
+             buildStandalone && rollupStandaloneInternals(),

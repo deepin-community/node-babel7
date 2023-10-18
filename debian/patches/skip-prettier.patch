@@ -1,23 +1,18 @@
 Description: prettier is not packaged, so we will skip it
 Forwarded: not-needed
-Reviewed-By: Xavier Guimard <yadd@debian.org>
-Last-Update: 2020-11-28
+Reviewed-By: Yadd <yadd@debian.org>
+Last-Update: 2021-12-16
 
 --- a/scripts/utils/formatCode.js
 +++ b/scripts/utils/formatCode.js
-@@ -9,14 +9,8 @@
-     return code;
-   };
- } else {
--  const prettier = require("prettier");
- 
-   module.exports = function formatCode(code, filename) {
--    filename = filename || __filename;
--    const prettierConfig = prettier.resolveConfig.sync(filename);
--    prettierConfig.filepath = filename;
--    prettierConfig.parser = filename.endsWith(".ts") ? "babel-ts" : "babel";
+@@ -1,9 +1,3 @@
+-import prettier from "prettier";
 -
--    return prettier.format(code, prettierConfig);
-+    return code;
-   };
+ export default function formatCode(code, filename) {
+-  const prettierConfig = prettier.resolveConfig.sync(filename);
+-  prettierConfig.filepath = filename;
+-  prettierConfig.parser = filename.endsWith(".ts") ? "babel-ts" : "babel";
+-
+-  return prettier.format(code, prettierConfig);
++  return code;
  }

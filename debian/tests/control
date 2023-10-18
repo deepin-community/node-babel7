@@ -1,8 +1,5 @@
-Tests: require
-Depends: node-babel7
-Restrictions: superficial, allow-stderr
-
 Depends: @, @builddeps@
 Restrictions: allow-stderr
 Features: test-name=rebuild-itself
-Test-Command: dh_auto_configure --buildsystem=nodejs && ./debian/rules override_dh_auto_build
+Test-Command: ./debian/rules override_dh_auto_configure && ./debian/rules override_dh_auto_build
+Architecture: amd64, arm64, armhf, i386, ppc64el, s390x

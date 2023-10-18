@@ -1,6 +1,9 @@
-import generator from "../../babel-generator";
-import template from "../lib";
 import * as t from "@babel/types";
+
+import _generator from "../../babel-generator/lib/index.js";
+import _template from "../lib/index.js";
+const generator = _generator.default || _generator;
+const template = _template.default || _template;
 
 const comments = "// Sum two numbers\nconst add = (a, b) => a + b;";
 
@@ -21,11 +24,6 @@ describe("@babel/template", function () {
     const code = "const add = (a, b) => a + b;";
     const output = template(comments)();
     expect(generator(output).code).toBe(code);
-  });
-
-  it("should preserve comments with a flag", function () {
-    const output = template(comments, { preserveComments: true })();
-    expect(generator(output).code).toBe(comments);
   });
 
   it("should preserve comments with a flag", function () {
@@ -228,7 +226,7 @@ describe("@babel/template", function () {
 
     it("should return assertions in ExportNamedDeclaration when using .ast", () => {
       const result = template.ast(
-        `export { foo2 } from "foo.json" assert { type: "json" };`,
+        `export { default as foo2 } from "foo.json" assert { type: "json" };`,
         {
           plugins: ["importAssertions"],
         },
@@ -392,6 +390,30 @@ describe("@babel/template", function () {
           expect(generator(output).code).toMatchInlineSnapshot(`"FOO + 1;"`);
         });
       });
+    });
+
+    it("works in var declaration", () => {
+      const output = template("var %%LHS%% = %%RHS%%")({
+        LHS: t.identifier("x"),
+        RHS: t.numericLiteral(7),
+      });
+      expect(generator(output).code).toMatchInlineSnapshot(`"var x = 7;"`);
+    });
+
+    it("works in const declaration", () => {
+      const output = template("const %%LHS%% = %%RHS%%")({
+        LHS: t.identifier("x"),
+        RHS: t.numericLiteral(7),
+      });
+      expect(generator(output).code).toMatchInlineSnapshot(`"const x = 7;"`);
+    });
+
+    it("works in let declaration", () => {
+      const output = template("let %%LHS%% = %%RHS%%")({
+        LHS: t.identifier("x"),
+        RHS: t.numericLiteral(7),
+      });
+      expect(generator(output).code).toMatchInlineSnapshot(`"let x = 7;"`);
     });
   });
 });

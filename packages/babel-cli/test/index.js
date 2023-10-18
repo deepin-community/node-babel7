@@ -1,32 +1,39 @@
-const readdir = require("fs-readdir-recursive");
-const helper = require("@babel/helper-fixtures");
-const rimraf = require("rimraf");
-const { sync: makeDirSync } = require("make-dir");
-const child = require("child_process");
-const escapeRegExp = require("lodash/escapeRegExp");
-const merge = require("lodash/merge");
-const path = require("path");
-const fs = require("fs");
+import readdir from "fs-readdir-recursive";
+import * as helper from "@babel/helper-fixtures";
+import rimraf from "rimraf";
+import semver from "semver";
+import child from "child_process";
+import path from "path";
+import fs from "fs";
+import { fileURLToPath } from "url";
+import { createRequire } from "module";
 
-const fixtureLoc = path.join(__dirname, "fixtures");
-const tmpLoc = path.join(__dirname, "tmp");
-const rootDir = path.resolve(__dirname, "../../..");
+import { chmod } from "../lib/babel/util.js";
+
+const require = createRequire(import.meta.url);
+
+const dirname = path.dirname(fileURLToPath(import.meta.url));
+const fixtureLoc = path.join(dirname, "fixtures");
+const tmpLoc = path.join(dirname, "tmp");
+const rootDir = path.resolve(dirname, "../../..");
 
 const fileFilter = function (x) {
   return x !== ".DS_Store";
 };
 
 const outputFileSync = function (filePath, data) {
-  makeDirSync(path.dirname(filePath));
+  fs.mkdirSync(path.dirname(filePath), { recursive: true });
   fs.writeFileSync(filePath, data);
 };
 
-const presetLocs = [path.join(rootDir, "./packages/babel-preset-react")];
+const getPath = name => path.join(rootDir, "packages", name, "lib", "index.js");
+
+const presetLocs = [getPath("babel-preset-react")];
 
 const pluginLocs = [
-  path.join(rootDir, "./packages/babel-plugin-transform-arrow-functions"),
-  path.join(rootDir, "./packages/babel-plugin-transform-strict-mode"),
-  path.join(rootDir, "./packages/babel-plugin-transform-modules-commonjs"),
+  getPath("babel-plugin-transform-arrow-functions"),
+  getPath("babel-plugin-transform-strict-mode"),
+  getPath("babel-plugin-transform-modules-commonjs"),
 ].join(",");
 
 const readDir = function (loc, filter) {
@@ -40,16 +47,15 @@ const readDir = function (loc, filter) {
 };
 
 const saveInFiles = function (files) {
-  // Place an empty .babelrc in each test so tests won't unexpectedly get to repo-level config.
-  if (!fs.existsSync(".babelrc")) {
-    outputFileSync(".babelrc", "{}");
-  }
-
   Object.keys(files).forEach(function (filename) {
     const content = files[filename];
-    outputFileSync(filename, content);
+    outputFileSync(path.join(tmpLoc, filename), content);
   });
 };
+
+function escapeRegExp(string) {
+  return string.replace(/[|\\{}()[\]^$+*?.]/g, "\\$&");
+}
 
 const normalizeOutput = function (str, cwd) {
   let result = str
@@ -76,29 +82,40 @@ const assertTest = function (stdout, stderr, opts, cwd) {
   const expectStderr = opts.stderr.trim();
   stderr = stderr.trim();
 
-  if (opts.stderr) {
-    if (opts.stderrContains) {
-      expect(stderr).toContain(expectStderr);
-    } else {
-      expect(stderr).toBe(expectStderr);
+  try {
+    if (opts.stderr) {
+      if (opts.stderrContains) {
+        expect(stderr).toContain(expectStderr);
+      } else {
+        expect(stderr).toBe(expectStderr);
+      }
+    } else if (stderr) {
+      throw new Error("stderr:\n" + stderr);
     }
-  } else if (stderr) {
-    throw new Error("stderr:\n" + stderr);
+  } catch (e) {
+    if (!process.env.OVERWRITE) throw e;
+    console.log(`Updated test file: ${opts.stderrPath}`);
+    outputFileSync(opts.stderrPath, stderr + "\n");
   }
 
   const expectStdout = opts.stdout.trim();
   stdout = stdout.trim();
   stdout = stdout.replace(/\\/g, "/");
 
-  if (opts.stdout) {
-    if (opts.stdoutContains) {
-      expect(stdout).toContain(expectStdout);
-    } else {
-      fs.writeFileSync(opts.stdoutPath, stdout + "\n");
-      expect(stdout).toBe(expectStdout);
+  try {
+    if (opts.stdout) {
+      if (opts.stdoutContains) {
+        expect(stdout).toContain(expectStdout);
+      } else {
+        expect(stdout).toBe(expectStdout);
+      }
+    } else if (stdout) {
+      throw new Error("stdout:\n" + stdout);
     }
-  } else if (stdout) {
-    throw new Error("stdout:\n" + stdout);
+  } catch (e) {
+    if (!process.env.OVERWRITE) throw e;
+    console.log(`Updated test file: ${opts.stdoutPath}`);
+    outputFileSync(opts.stdoutPath, stdout + "\n");
   }
 
   if (opts.outFiles) {
@@ -115,11 +132,16 @@ const assertTest = function (stdout, stderr, opts, cwd) {
           const expected = opts.outFiles[filename];
           const actual = actualFiles[filename];
 
-          expect(actual).toBe(expected ?? "");
+          expect(actual).toBe(expected || "");
         }
       } catch (e) {
-        e.message += "\n at " + filename;
-        throw e;
+        if (!process.env.OVERWRITE) {
+          e.message += "\n at " + filename;
+          throw e;
+        }
+        const expectedLoc = path.join(opts.testLoc, "out-files", filename);
+        console.log(`Updated test file: ${expectedLoc}`);
+        outputFileSync(expectedLoc, actualFiles[filename]);
       }
     });
 
@@ -129,33 +151,33 @@ const assertTest = function (stdout, stderr, opts, cwd) {
   }
 };
 
+const nodeGte8 = semver.gte(process.version, "8.0.0");
+
 const buildTest = function (binName, testName, opts) {
-  const binLoc = path.join(__dirname, "../lib", binName);
+  const binLoc = path.join(dirname, "../lib", binName);
 
   return function (callback) {
     saveInFiles(opts.inFiles);
 
-    let args = [binLoc];
+    let args = nodeGte8
+      ? ["--require", path.join(dirname, "./exit-loader.cjs"), binLoc]
+      : [binLoc];
 
-    if (binName !== "babel-external-helpers") {
+    if (binName !== "babel-external-helpers" && !opts.noDefaultPlugins) {
       args.push("--presets", presetLocs, "--plugins", pluginLocs);
     }
 
     args = args.concat(opts.args);
     const env = { ...process.env, ...opts.env };
 
-    const spawn = child.spawn(process.execPath, args, { env });
+    const spawn = child.spawn(process.execPath, args, {
+      env,
+      cwd: tmpLoc,
+      stdio: [null, null, null, "ipc"],
+    });
 
     let stderr = "";
     let stdout = "";
-
-    spawn.stderr.on("data", function (chunk) {
-      stderr += chunk;
-    });
-
-    spawn.stdout.on("data", function (chunk) {
-      stdout += chunk;
-    });
 
     spawn.on("close", function () {
       let err;
@@ -178,19 +200,46 @@ const buildTest = function (binName, testName, opts) {
       spawn.stdin.write(opts.stdin);
       spawn.stdin.end();
     }
+
+    const captureOutput = proc => {
+      proc.stderr.on("data", function (chunk) {
+        stderr += chunk;
+      });
+
+      proc.stdout.on("data", function (chunk) {
+        stdout += chunk;
+      });
+    };
+
+    if (opts.executor) {
+      const executor = child.spawn(process.execPath, [opts.executor], {
+        cwd: tmpLoc,
+      });
+
+      spawn.stdout.pipe(executor.stdin);
+      spawn.stderr.pipe(executor.stdin);
+
+      executor.on("close", function () {
+        if (nodeGte8) {
+          spawn.send("exit");
+        } else {
+          spawn.kill("SIGKILL");
+        }
+      });
+
+      captureOutput(executor);
+    } else {
+      captureOutput(spawn);
+    }
   };
 };
 
 fs.readdirSync(fixtureLoc).forEach(function (binName) {
-  if (binName.startsWith(".")) return;
+  if (binName.startsWith(".") || binName === "package.json") return;
 
   const suiteLoc = path.join(fixtureLoc, binName);
   describe("bin/" + binName, function () {
-    let cwd;
-
     beforeEach(() => {
-      cwd = process.cwd();
-
       if (fs.existsSync(tmpLoc)) {
         for (const child of fs.readdirSync(tmpLoc)) {
           rimraf.sync(path.join(tmpLoc, child));
@@ -198,12 +247,6 @@ fs.readdirSync(fixtureLoc).forEach(function (binName) {
       } else {
         fs.mkdirSync(tmpLoc);
       }
-
-      process.chdir(tmpLoc);
-    });
-
-    afterEach(() => {
-      process.chdir(cwd);
     });
 
     fs.readdirSync(suiteLoc).forEach(function (testName) {
@@ -211,7 +254,7 @@ fs.readdirSync(fixtureLoc).forEach(function (binName) {
 
       const testLoc = path.join(suiteLoc, testName);
 
-      const opts = {
+      let opts = {
         args: [],
       };
 
@@ -237,7 +280,12 @@ fs.readdirSync(fixtureLoc).forEach(function (binName) {
 
           delete taskOpts.os;
         }
-        merge(opts, taskOpts);
+        opts = { args: [], ...taskOpts };
+      }
+
+      const executorLoc = path.join(testLoc, "executor.js");
+      if (fs.existsSync(executorLoc)) {
+        opts.executor = executorLoc;
       }
 
       ["stdout", "stdin", "stderr"].forEach(function (key) {
@@ -250,6 +298,7 @@ fs.readdirSync(fixtureLoc).forEach(function (binName) {
         }
       });
 
+      opts.testLoc = testLoc;
       opts.outFiles = readDir(path.join(testLoc, "out-files"), fileFilter);
       opts.inFiles = readDir(path.join(testLoc, "in-files"), fileFilter);
 
@@ -258,14 +307,44 @@ fs.readdirSync(fixtureLoc).forEach(function (binName) {
       if (fs.existsSync(babelrcLoc)) {
         // copy .babelrc file to tmp directory
         opts.inFiles[".babelrc"] = helper.readFile(babelrcLoc);
-        opts.inFiles[".babelignore"] = helper.readFile(babelIgnoreLoc);
+      } else if (!opts.noBabelrc) {
+        opts.inFiles[".babelrc"] = "{}";
       }
       if (fs.existsSync(babelIgnoreLoc)) {
         // copy .babelignore file to tmp directory
         opts.inFiles[".babelignore"] = helper.readFile(babelIgnoreLoc);
       }
 
-      it(testName, buildTest(binName, testName, opts), 20000);
+      const skip =
+        opts.minNodeVersion &&
+        parseInt(process.versions.node, 10) < opts.minNodeVersion;
+
+      // eslint-disable-next-line jest/valid-title
+      (skip
+        ? it.skip
+        : it)(testName, buildTest(binName, testName, opts), 20000);
+    });
+  });
+});
+
+describe("util.js", () => {
+  describe("chmod", () => {
+    it("should warn the user if chmod fails", () => {
+      const spyConsoleWarn = jest
+        .spyOn(console, "warn")
+        .mockImplementation(() => {});
+
+      // The first argument should be a string.
+      // The real reason chmod will fail is due to wrong permissions,
+      // but this is enough to cause a failure.
+      chmod(100, "file.js");
+
+      expect(spyConsoleWarn).toHaveBeenCalledTimes(1);
+      expect(spyConsoleWarn).toHaveBeenCalledWith(
+        "Cannot change permissions of file.js",
+      );
+
+      spyConsoleWarn.mockRestore();
     });
   });
 });

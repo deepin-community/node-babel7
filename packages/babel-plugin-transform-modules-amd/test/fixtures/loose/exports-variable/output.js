@@ -2,17 +2,16 @@ define(["exports"], function (_exports) {
   "use strict";
 
   _exports.__esModule = true;
+  _exports.foo7 = _exports.foo6 = _exports.foo5 = _exports.foo4 = _exports.foo3 = _exports.foo2 = _exports.foo = _exports.bar = void 0;
   _exports.foo8 = foo8;
-  _exports.foo9 = _exports.foo7 = _exports.foo6 = _exports.foo5 = _exports.foo4 = _exports.foo3 = _exports.bar = _exports.foo2 = _exports.foo = void 0;
+  _exports.foo9 = void 0;
   var foo = 1;
   _exports.foo = foo;
   var foo2 = 1,
-      bar = 2;
+    bar = 2;
   _exports.bar = bar;
   _exports.foo2 = foo2;
-
   var foo3 = function () {};
-
   _exports.foo3 = foo3;
   var foo4;
   _exports.foo4 = foo4;
@@ -22,10 +21,7 @@ define(["exports"], function (_exports) {
   _exports.foo6 = foo6;
   const foo7 = 3;
   _exports.foo7 = foo7;
-
   function foo8() {}
-
   class foo9 {}
-
   _exports.foo9 = foo9;
 });

@@ -1,4 +1,32 @@
-import verifyAndAssertMessages from "../../helpers/verifyAndAssertMessages";
+import verifyAndAssertMessages from "../../helpers/verifyAndAssertMessages.js";
+import path from "path";
+import { fileURLToPath } from "url";
+
+function verifyDecoratorsLegacyAndAssertMessages(
+  code,
+  rules,
+  expectedMessages,
+  sourceType,
+) {
+  const overrideConfig = {
+    parserOptions: {
+      sourceType,
+      babelOptions: {
+        configFile: path.resolve(
+          path.dirname(fileURLToPath(import.meta.url)),
+          "../../../../babel-eslint-shared-fixtures/config/babel.config.decorators-legacy.js",
+        ),
+      },
+    },
+  };
+  return verifyAndAssertMessages(
+    code,
+    rules,
+    expectedMessages,
+    sourceType,
+    overrideConfig,
+  );
+}
 
 describe("verify", () => {
   it("arrow function support (issue #1)", () => {
@@ -43,9 +71,10 @@ describe("verify", () => {
   });
 
   it("super keyword in class (issue #10)", () => {
-    verifyAndAssertMessages("class Foo { constructor() { super() } }", {
-      "no-undef": 1,
-    });
+    verifyAndAssertMessages(
+      "class Foo extends class {} { constructor() { super() } }",
+      { "no-undef": 1 },
+    );
   });
 
   it("Rest parameter in destructuring assignment (issue #11)", () => {
@@ -1070,31 +1099,6 @@ describe("verify", () => {
   });
 
   describe("decorators #72 (legacy)", () => {
-    function verifyDecoratorsLegacyAndAssertMessages(
-      code,
-      rules,
-      expectedMessages,
-      sourceType,
-    ) {
-      const overrideConfig = {
-        parserOptions: {
-          sourceType,
-          babelOptions: {
-            configFile: require.resolve(
-              "../../../../babel-eslint-shared-fixtures/config/babel.config.decorators-legacy.js",
-            ),
-          },
-        },
-      };
-      return verifyAndAssertMessages(
-        code,
-        rules,
-        expectedMessages,
-        sourceType,
-        overrideConfig,
-      );
-    }
-
     it("class declaration", () => {
       verifyDecoratorsLegacyAndAssertMessages(
         `
@@ -1239,6 +1243,16 @@ describe("verify", () => {
           }
         `,
         { "no-unused-vars": 1 },
+      );
+    });
+  });
+
+  describe("decorators #15085 (legacy)", () => {
+    it("works with keyword-spacing rule", () => {
+      verifyDecoratorsLegacyAndAssertMessages(
+        "@dec export class C {}; @dec export default class {}",
+        { "keyword-spacing": 1 },
+        [],
       );
     });
   });
@@ -1546,7 +1560,9 @@ describe("verify", () => {
     );
   });
 
-  it("allowImportExportEverywhere option (#327)", () => {
+  const babel7 = process.env.BABEL_8_BREAKING ? it.skip : it;
+
+  babel7("allowImportExportEverywhere option (#327)", () => {
     verifyAndAssertMessages(
       `
         if (true) { import Foo from 'foo'; }
@@ -1562,6 +1578,29 @@ describe("verify", () => {
           ecmaVersion: 6,
           sourceType: "module",
           allowImportExportEverywhere: true,
+        },
+      },
+    );
+  });
+
+  it("allowImportExportEverywhere @babel/parser option (#327)", () => {
+    verifyAndAssertMessages(
+      `
+        if (true) { import Foo from 'foo'; }
+        function foo() { import Bar from 'bar'; }
+        switch (a) { case 1: import FooBar from 'foobar'; }
+      `,
+      {},
+      [],
+      "module",
+      {
+        env: {},
+        parserOptions: {
+          ecmaVersion: 6,
+          sourceType: "module",
+          babelOptions: {
+            parserOpts: { allowImportExportEverywhere: true },
+          },
         },
       },
     );
@@ -1734,6 +1773,15 @@ describe("verify", () => {
           { "no-unused-vars": 1 },
         );
       });
+
+      it("type annotations should work", () => {
+        verifyAndAssertMessages(
+          `class C {
+            #p: Array<number>
+          }`,
+          { "no-undef": 1 },
+        );
+      });
     });
 
     describe("private methods", () => {
@@ -1792,6 +1840,31 @@ describe("verify", () => {
   #b() {} // no-unreachable should not bail here
 }`,
           { "no-unreachable": 1 },
+        );
+      });
+
+      it("should work with func-names", () => {
+        verifyAndAssertMessages(
+          `
+              export class C {
+                #d() {};
+              }
+          `,
+          { "func-names": 1 },
+        );
+      });
+
+      it("should work with space-before-function-paren", () => {
+        verifyAndAssertMessages(
+          `
+              export class C {
+                #d() {};
+              }
+          `,
+          { "space-before-function-paren": 1 },
+          [
+            "2:5 Missing space before function parentheses. space-before-function-paren",
+          ],
         );
       });
     });

@@ -1,11 +1,11 @@
 // Edge
-(_ref) => {
+_ref => {
   var {
     x = 2
   } = _ref;
-}; // Safari
+};
 
-
+// Safari
 {
   var x;
   {

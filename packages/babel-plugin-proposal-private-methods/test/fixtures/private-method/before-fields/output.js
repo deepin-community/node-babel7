@@ -1,25 +1,18 @@
-var _priv = new WeakMap();
-
-var _method = new WeakSet();
-
+var _priv = /*#__PURE__*/new WeakMap();
+var _method = /*#__PURE__*/new WeakSet();
 class Cl {
   constructor() {
-    _method.add(this);
-
+    babelHelpers.classPrivateMethodInitSpec(this, _method);
     babelHelpers.defineProperty(this, "prop", babelHelpers.classPrivateMethodGet(this, _method, _method2).call(this, 1));
-
-    _priv.set(this, {
+    babelHelpers.classPrivateFieldInitSpec(this, _priv, {
       writable: true,
       value: babelHelpers.classPrivateMethodGet(this, _method, _method2).call(this, 2)
     });
   }
-
   getPriv() {
     return babelHelpers.classPrivateFieldGet(this, _priv);
   }
-
 }
-
-var _method2 = function _method2(x) {
+function _method2(x) {
   return x;
-};
+}

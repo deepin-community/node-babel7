@@ -1,6 +1,8 @@
-import * as t from "../lib";
+import * as t from "../lib/index.js";
 import { parse } from "@babel/parser";
-import generate from "@babel/generator";
+
+import _generate from "@babel/generator";
+const generate = _generate.default || _generate;
 
 function parseCode(string) {
   return parse(string, {
@@ -14,6 +16,10 @@ function generateCode(node) {
 describe("converters", function () {
   it("toIdentifier", function () {
     expect(t.toIdentifier("swag-lord")).toBe("swagLord");
+    expect(t.toIdentifier("ɵ2")).toBe("ɵ2");
+    expect(t.toIdentifier("ℬ1")).toBe("ℬ1");
+    expect(t.toIdentifier("1bc")).toBe("bc");
+    expect(t.toIdentifier("\u0487a")).toBe("_\u0487a");
   });
 
   describe("valueToNode", function () {

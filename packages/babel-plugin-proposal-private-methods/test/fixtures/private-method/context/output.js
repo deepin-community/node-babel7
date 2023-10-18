@@ -1,20 +1,15 @@
-var _getStatus = new WeakSet();
-
+var _getStatus = /*#__PURE__*/new WeakSet();
 class Foo {
   constructor(status) {
-    _getStatus.add(this);
-
+    babelHelpers.classPrivateMethodInitSpec(this, _getStatus);
     this.status = status;
   }
-
   getCurrentStatus() {
     return babelHelpers.classPrivateMethodGet(this, _getStatus, _getStatus2).call(this);
   }
-
   setCurrentStatus(newStatus) {
     this.status = newStatus;
   }
-
   getFakeStatus(fakeStatus) {
     var fakeGetStatus = babelHelpers.classPrivateMethodGet(this, _getStatus, _getStatus2);
     return function () {
@@ -23,16 +18,13 @@ class Foo {
       });
     };
   }
-
   getFakeStatusFunc() {
     return {
       status: 'fake-status',
       getFakeStatus: babelHelpers.classPrivateMethodGet(this, _getStatus, _getStatus2)
     };
   }
-
 }
-
-var _getStatus2 = function _getStatus2() {
+function _getStatus2() {
   return this.status;
-};
+}

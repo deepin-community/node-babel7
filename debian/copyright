@@ -30,22 +30,48 @@ Source: https://babeljs.io/
  https://registry.npmjs.org/@types/babel__traverse
  https://registry.npmjs.org/@types/babel-types
  https://registry.npmjs.org/@babel/plugin-syntax-import-meta
+ https://registry.npmjs.org/@babel/plugin-syntax-class-properties
+ https://registry.npmjs.org/@babel/plugin-syntax-class-static-block
+ https://registry.npmjs.org/@babel/plugin-syntax-private-property-in-object
+ https://registry.npmjs.org/@babel/plugin-syntax-top-level-await
+ https://github.com/newoga/babel-plugin-transform-replace-object-assign/tags
+ https://github.com/airbnb/babel-preset-airbnb/tags
+ https://github.com/babel/preset-modules/tags
+ https://registry.npmjs.org/@babel/helper-bindify-decorators
+ https://registry.npmjs.org/@babel/helper-call-delegate
+ https://registry.npmjs.org/@babel/helper-explode-class
+ https://registry.npmjs.org/@babel/plugin-syntax-module-string-names
+ https://github.com/Andarist/babel-check-duplicated-nodes/tags
+Files-Excluded: .yarn .vscode .circleci .codesandbox .git*
 
 Files: *
 Copyright: 2014-present, Sebastian McKenzie <sebmck@gmail.com>
 License: Expat
 
-Files: babel-preset-current-node-syntax/*
-Copyright: 2020 Nicolò Ribaudo and other contributors
+Files: babel-plugin-dynamic-import-node/*
+ babel-preset-airbnb/*
+Copyright: 2015-2016 Airbnb
+License: Expat
+
+Files: babel-plugin-transform-replace-object-assign/*
+Copyright: Neil Gabbadon <neil.gabbadon@gmail.com>
+License: Expat
+
+Files: babel-preset-modules/*
+Copyright: 2020 Babel
+License: Expat
+
+Files: benchmark/babel-generator/real-case/jquery*
+Copyright: OpenJS Foundation and other contributors
 License: Expat
 
 Files: debian/*
 Copyright: 2016, Pirate Praveen <praveen@debian.org>
- 2019-2021, Yadd <yadd@debian.org>
+ 2019-2022, Yadd <yadd@debian.org>
 License: Expat
 
-Files: debian/build_modules/array-each/*
-Copyright: 2015, 2017, Jon Schlinkert
+Files: debian/build_modules/assign-symbols/*
+Copyright: 2015 Jon Schlinkert
 License: Expat
 
 Files: debian/build_modules/buffer-es6/*
@@ -83,6 +109,13 @@ License: Expat
 Files: debian/build_modules/html-minifier/cli.js
 Copyright: 2014-2016, Zoltan Frombach
 License: Expat
+
+Files: debian/build_modules/import-meta-resolve/*
+Copyright: 2021 Titus Wormer <tituswormer@gmail.com>
+License: Expat
+Comment: This is a derivative work based on: https://github.com/nodejs/node
+ Copyright: Node.js contributors
+ License: Expat
 
 Files: debian/build_modules/make-error-cause/*
 Copyright: 2015, Blake Embrey
@@ -135,12 +168,12 @@ Files: debian/build_modules/rollup-plugin-node-builtins/src/es6/zlib-lib/*
 Copyright: 2014-2016 by Vitaly Puzrin
 License: Expat
 
-Files: debian/build_modules/@rollup/*
-Copyright: 2019 RollupJS Plugin Contributors <https://github.com/rollup/plugins/graphs/contributors>
-License: Expat
-
 Files: debian/build_modules/streamfilter/*
 Copyright: 2013-2014, Nicolas Froidure <https://insertafter.com/>
+License: Expat
+
+Files: debian/build_modules/@types/*
+Copyright: Microsoft Corporation
 License: Expat
 
 Files: debian/build_modules/warnings-to-errors-webpack-plugin/*
@@ -153,6 +186,14 @@ License: Expat
 
 Files: debian/build_modules/webpack-stream/*
 Copyright: 2018, Kyle Robinson Young
+License: Expat
+
+Files: eslint/babel-eslint-plugin/*
+Copyright: 2014-2015 Jason Quense <jason@quense.me>
+License: Expat
+
+Files: gensync/*
+Copyright: Logan Smyth <loganfsmyth@gmail.com>
 License: Expat
 
 Files: js-levenshtein/*
@@ -210,10 +251,6 @@ Copyright: 2012-2014 , Acorn contributors
  2012-2014, zsjforcn
 License: Expat
 
-Files: packages/babel-parser/src/parser/comments.js
-Copyright: 2013-2015, Facebook Inc.
-License: BSD-2-Clause
-
 Files: packages/babel-parser/test/expressions/esprima/*
  packages/babel-parser/test/fixtures/esprima/*
 Copyright: jQuery Foundation, Inc. and Contributors
@@ -223,11 +260,15 @@ Files: packages/babel-plugin-proposal-class-properties/test/*/private/declaratio
 Copyright: 2012-2013, Ecma International
 License: BSD-3-Clause
 
+Files: packages/babel-plugin-proposal-record-and-tuple/src/*
+Copyright: 2020 Bloomberg Finance L.P.
+License: Expat
+
 Files: packages/babel-plugin-transform-object-assign/*
 Copyright: 2015, Jed Watson
 License: Expat
 
-Files: packages/babel-standalone/src/transformScriptTags.js
+Files: packages/babel-standalone/src/transformScriptTags.ts
 Copyright: 2013-2015, Facebook Inc.
 License: BSD-2-Clause
 
@@ -235,7 +276,7 @@ Files: pirates/*
 Copyright: 2016-2018 Ari Porad
 License: Expat
 
-Files: types-*
+Files: types-*/*
 Copyright: Microsoft Corporation
 License: Expat
 

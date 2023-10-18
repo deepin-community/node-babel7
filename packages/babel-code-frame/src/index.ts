@@ -1,5 +1,7 @@
 import highlight, { shouldHighlight, getChalk } from "@babel/highlight";
 
+type Chalk = ReturnType<typeof getChalk>;
+
 let deprecationWarningShown = false;
 
 type Location = {
@@ -37,7 +39,7 @@ export interface Options {
 /**
  * Chalk styles for code frame token types.
  */
-function getDefs(chalk) {
+function getDefs(chalk: Chalk) {
   return {
     gutter: chalk.grey,
     marker: chalk.red.bold,
@@ -55,6 +57,8 @@ const NEWLINE = /\r\n|[\n\r\u2028\u2029]/;
  * Extract what lines should be marked and highlighted.
  */
 
+type MarkerLines = Record<number, true | [number, number]>;
+
 function getMarkerLines(
   loc: NodeLocation,
   source: Array<string>,
@@ -62,7 +66,7 @@ function getMarkerLines(
 ): {
   start: number;
   end: number;
-  markerLines: any;
+  markerLines: MarkerLines;
 } {
   const startLoc: Location = {
     column: 0,
@@ -91,7 +95,7 @@ function getMarkerLines(
   }
 
   const lineDiff = endLine - startLine;
-  const markerLines = {};
+  const markerLines: MarkerLines = {};
 
   if (lineDiff) {
     for (let i = 0; i <= lineDiff; i++) {
@@ -135,7 +139,7 @@ export function codeFrameColumns(
     (opts.highlightCode || opts.forceColor) && shouldHighlight(opts);
   const chalk = getChalk(opts);
   const defs = getDefs(chalk);
-  const maybeHighlight = (chalkFn, string) => {
+  const maybeHighlight = (chalkFn: Chalk, string: string) => {
     return highlighted ? chalkFn(string) : string;
   };
   const lines = rawLines.split(NEWLINE);
@@ -147,12 +151,12 @@ export function codeFrameColumns(
   const highlightedLines = highlighted ? highlight(rawLines, opts) : rawLines;
 
   let frame = highlightedLines
-    .split(NEWLINE)
+    .split(NEWLINE, end)
     .slice(start, end)
     .map((line, index) => {
       const number = start + 1 + index;
       const paddedNumber = ` ${number}`.slice(-numberMaxWidth);
-      const gutter = ` ${paddedNumber} | `;
+      const gutter = ` ${paddedNumber} |`;
       const hasMarker = markerLines[number];
       const lastMarkerLine = !markerLines[number + 1];
       if (hasMarker) {
@@ -166,6 +170,7 @@ export function codeFrameColumns(
           markerLine = [
             "\n ",
             maybeHighlight(defs.gutter, gutter.replace(/\d/g, " ")),
+            " ",
             markerSpacing,
             maybeHighlight(defs.marker, "^").repeat(numberOfMarkers),
           ].join("");
@@ -177,11 +182,13 @@ export function codeFrameColumns(
         return [
           maybeHighlight(defs.marker, ">"),
           maybeHighlight(defs.gutter, gutter),
-          line,
+          line.length > 0 ? ` ${line}` : "",
           markerLine,
         ].join("");
       } else {
-        return ` ${maybeHighlight(defs.gutter, gutter)}${line}`;
+        return ` ${maybeHighlight(defs.gutter, gutter)}${
+          line.length > 0 ? ` ${line}` : ""
+        }`;
       }
     })
     .join("\n");

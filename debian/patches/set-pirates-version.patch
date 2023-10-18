@@ -1,0 +1,14 @@
+Description: set pirate version
+Author: Yadd <yadd@debian.org>
+Forwarded: not-needed
+Last-Update: 2022-03-22
+
+--- a/pirates/package.json
++++ b/pirates/package.json
+@@ -1,5 +1,6 @@
+ {
+   "name": "pirates",
++  "version": "4.0.5",
+   "description": "Properly hijack require",
+   "main": "lib/index.js",
+   "types": "index.d.ts",

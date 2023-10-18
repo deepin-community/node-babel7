@@ -33,16 +33,16 @@ export default function traverse<T>(
     handlers = { enter: handlers };
   }
 
-  const { enter, exit } = handlers as TraversalHandlers<T>;
+  const { enter, exit } = handlers;
 
   traverseSimpleImpl(node, enter, exit, state, []);
 }
 
 function traverseSimpleImpl<T>(
   node: any,
-  enter: Function | undefined | null,
-  exit: Function | undefined | null,
-  state: T | undefined | null,
+  enter: Function | undefined,
+  exit: Function | undefined,
+  state: T | undefined,
   ancestors: TraversalAncestors,
 ) {
   const keys = VISITOR_KEYS[node.type];

@@ -39,7 +39,6 @@ config <CWD>/my-extended.js .overrides[0].env["test"]
     "@foo/babel-preset-1",
     [
       {
-        "name": "@foo/inline-babel-preset-1",
         "plugins": [
           {
             "name": "@foo/inline-babel-plugin-1",
@@ -111,12 +110,12 @@ config <CWD>/.babelrc
 programmatic options from @babel/cli
 {
   "presets": [
-    "<ROOTDIR>/packages/babel-preset-react"
+    "<ROOTDIR>/packages/babel-preset-react/lib/index.js"
   ],
   "plugins": [
-    "<ROOTDIR>/packages/babel-plugin-transform-arrow-functions",
-    "<ROOTDIR>/packages/babel-plugin-transform-strict-mode",
-    "<ROOTDIR>/packages/babel-plugin-transform-modules-commonjs"
+    "<ROOTDIR>/packages/babel-plugin-transform-arrow-functions/lib/index.js",
+    "<ROOTDIR>/packages/babel-plugin-transform-strict-mode/lib/index.js",
+    "<ROOTDIR>/packages/babel-plugin-transform-modules-commonjs/lib/index.js"
   ],
   "configFile": "./my-config.js",
   "sourceFileName": "./src/index.js",
@@ -125,3 +124,5 @@ programmatic options from @babel/cli
   },
   "filename": "./src/index.js"
 }
+-----End Babel configs-----
+"use strict";

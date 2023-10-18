@@ -1,0 +1,26 @@
+Description: fix this error:
+ The following tasks did not complete: build-babel-standalone, rollup-babel-standalone
+ Did you forget to signal async completion?
+Author: Yadd <yadd@debian.org>
+Forwarded: not-needed
+Last-Update: 2021-12-17
+
+--- a/Gulpfile.mjs
++++ b/Gulpfile.mjs
+@@ -696,13 +696,13 @@
+   return generateRuntimeHelpers();
+ });
+ 
+-gulp.task("generate-standalone", () => generateStandalone());
++gulp.task("generate-standalone", async () => generateStandalone());
+ 
+ gulp.task("build-rollup", () => buildRollup(libBundles));
+-gulp.task("rollup-babel-standalone", () => buildRollup(standaloneBundle, true));
++gulp.task("rollup-babel-standalone", async () => buildRollup(standaloneBundle, true));
+ gulp.task(
+   "build-babel-standalone",
+-  gulp.series("generate-standalone", "rollup-babel-standalone")
++  async () => gulp.series("generate-standalone", "rollup-babel-standalone")
+ );
+ 
+ gulp.task("copy-dts", () => copyDts(dtsBundles));

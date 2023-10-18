@@ -4,20 +4,32 @@ import { isFile, isIdentifier } from "../validators/generated";
 
 const has = Function.call.bind(Object.prototype.hasOwnProperty);
 
+type CommentCache = Map<t.Comment, t.Comment>;
+
 // This function will never be called for comments, only for real nodes.
-function cloneIfNode(obj, deep, withoutLoc) {
+function cloneIfNode(
+  obj: t.Node | undefined | null,
+  deep: boolean,
+  withoutLoc: boolean,
+  commentsCache: CommentCache,
+) {
   if (obj && typeof obj.type === "string") {
-    return cloneNode(obj, deep, withoutLoc);
+    return cloneNodeInternal(obj, deep, withoutLoc, commentsCache);
   }
 
   return obj;
 }
 
-function cloneIfNodeOrArray(obj, deep, withoutLoc) {
+function cloneIfNodeOrArray(
+  obj: t.Node | undefined | null | (t.Node | undefined | null)[],
+  deep: boolean,
+  withoutLoc: boolean,
+  commentsCache: CommentCache,
+) {
   if (Array.isArray(obj)) {
-    return obj.map(node => cloneIfNode(node, deep, withoutLoc));
+    return obj.map(node => cloneIfNode(node, deep, withoutLoc, commentsCache));
   }
-  return cloneIfNode(obj, deep, withoutLoc);
+  return cloneIfNode(obj, deep, withoutLoc, commentsCache);
 }
 
 /**
@@ -29,6 +41,15 @@ export default function cloneNode<T extends t.Node>(
   node: T,
   deep: boolean = true,
   withoutLoc: boolean = false,
+): T {
+  return cloneNodeInternal(node, deep, withoutLoc, new Map());
+}
+
+function cloneNodeInternal<T extends t.Node>(
+  node: T,
+  deep: boolean = true,
+  withoutLoc: boolean = false,
+  commentsCache: CommentCache,
 ): T {
   if (!node) return node;
 
@@ -45,7 +66,12 @@ export default function cloneNode<T extends t.Node>(
 
     if (has(node, "typeAnnotation")) {
       newNode.typeAnnotation = deep
-        ? cloneIfNodeOrArray(node.typeAnnotation, true, withoutLoc)
+        ? cloneIfNodeOrArray(
+            node.typeAnnotation,
+            true,
+            withoutLoc,
+            commentsCache,
+          )
         : node.typeAnnotation;
     }
   } else if (!has(NODE_FIELDS, type)) {
@@ -56,10 +82,23 @@ export default function cloneNode<T extends t.Node>(
         if (deep) {
           newNode[field] =
             isFile(node) && field === "comments"
-              ? maybeCloneComments(node.comments, deep, withoutLoc)
-              : cloneIfNodeOrArray(node[field], true, withoutLoc);
+              ? maybeCloneComments(
+                  node.comments,
+                  deep,
+                  withoutLoc,
+                  commentsCache,
+                )
+              : cloneIfNodeOrArray(
+                  // @ts-expect-error node[field] has been guarded by has check
+                  node[field],
+                  true,
+                  withoutLoc,
+                  commentsCache,
+                );
         } else {
-          newNode[field] = node[field];
+          newNode[field] =
+            // @ts-expect-error node[field] has been guarded by has check
+            node[field];
         }
       }
     }
@@ -77,6 +116,7 @@ export default function cloneNode<T extends t.Node>(
       node.leadingComments,
       deep,
       withoutLoc,
+      commentsCache,
     );
   }
   if (has(node, "innerComments")) {
@@ -84,6 +124,7 @@ export default function cloneNode<T extends t.Node>(
       node.innerComments,
       deep,
       withoutLoc,
+      commentsCache,
     );
   }
   if (has(node, "trailingComments")) {
@@ -91,6 +132,7 @@ export default function cloneNode<T extends t.Node>(
       node.trailingComments,
       deep,
       withoutLoc,
+      commentsCache,
     );
   }
   if (has(node, "extra")) {
@@ -102,17 +144,28 @@ export default function cloneNode<T extends t.Node>(
   return newNode;
 }
 
-function cloneCommentsWithoutLoc<T extends t.Comment>(comments: T[]): T[] {
-  return comments.map(
-    ({ type, value }) =>
-      ({
-        type,
-        value,
-        loc: null,
-      } as T),
-  );
-}
+function maybeCloneComments<T extends t.Comment>(
+  comments: ReadonlyArray<T> | null,
+  deep: boolean,
+  withoutLoc: boolean,
+  commentsCache: Map<T, T>,
+): ReadonlyArray<T> | null {
+  if (!comments || !deep) {
+    return comments;
+  }
+  return comments.map(comment => {
+    const cache = commentsCache.get(comment);
+    if (cache) return cache;
 
-function maybeCloneComments(comments, deep, withoutLoc) {
-  return deep && withoutLoc ? cloneCommentsWithoutLoc(comments) : comments;
+    const { type, value, loc } = comment;
+
+    const ret = { type, value, loc } as T;
+    if (withoutLoc) {
+      ret.loc = null;
+    }
+
+    commentsCache.set(comment, ret);
+
+    return ret;
+  });
 }

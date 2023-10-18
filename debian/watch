@@ -1,9 +1,66 @@
 version=4
 opts=\
-repacksuffix=+dfsg,\
+repack,\
+repacksuffix=+ds1,\
 dversionmangle=s/\+(debian|dfsg|ds|deb)(\.\d+)?$//,\
 filenamemangle=s/.*?(\d[\d\.-]*@ARCHIVE_EXT@)/node-babel7-$1/ \
  https://github.com/babel/babel/tags .*/archive/.*/v?([\d\.]+).tar.gz group
+
+opts=\
+component=babel-plugin-dynamic-import-node,\
+ctype=nodejs,\
+dversionmangle=auto,\
+filenamemangle=s/.*?(\d[\d\.-]*@ARCHIVE_EXT@)/node-babel-plugin-dynamic-import-node-$1/ \
+ https://github.com/airbnb/babel-plugin-dynamic-import-node/tags .*/archive.*/v?([\d\.]+).tar.gz checksum
+
+opts="searchmode=plain,component=babel-plugin-syntax-async-generators,ctype=nodejs,pgpmode=none,filenamemangle=s/^.*?(\d[\d\.-]*@ARCHIVE_EXT@)/node-babel-plugin-syntax-async-generators-$1/" \
+ https://registry.npmjs.org/@babel/plugin-syntax-async-generators https://registry.npmjs.org/@babel/plugin-syntax-async-generators/-/plugin-syntax-async-generators-([\d\.]+)@ARCHIVE_EXT@ checksum
+
+opts="searchmode=plain,component=babel-plugin-syntax-class-properties,ctype=nodejs,pgpmode=none,filenamemangle=s/^.*?(\d[\d\.-]*@ARCHIVE_EXT@)/node-babel-plugin-syntax-class-properties-$1/" \
+ https://registry.npmjs.org/@babel/plugin-syntax-class-properties https://registry.npmjs.org/@babel/plugin-syntax-class-properties/-/plugin-syntax-class-properties-([\d\.]+)@ARCHIVE_EXT@ checksum
+
+opts="searchmode=plain,component=babel-plugin-syntax-class-static-block,ctype=nodejs,pgpmode=none,filenamemangle=s/^.*?(\d[\d\.-]*@ARCHIVE_EXT@)/node-babel-plugin-syntax-class-static-block-$1/" \
+ https://registry.npmjs.org/@babel/plugin-syntax-class-static-block https://registry.npmjs.org/@babel/plugin-syntax-class-static-block/-/plugin-syntax-class-static-block-([\d\.]+)@ARCHIVE_EXT@ checksum
+
+opts="searchmode=plain,component=babel-plugin-syntax-dynamic-import,ctype=nodejs,pgpmode=none,filenamemangle=s/^.*?(\d[\d\.-]*@ARCHIVE_EXT@)/node-babel-plugin-syntax-dynamic-import-$1/" \
+ https://registry.npmjs.org/@babel/plugin-syntax-dynamic-import https://registry.npmjs.org/@babel/plugin-syntax-dynamic-import/-/plugin-syntax-dynamic-import-([\d\.]+)@ARCHIVE_EXT@ checksum
+
+opts="searchmode=plain,component=babel-plugin-syntax-export-namespace-from,ctype=nodejs,pgpmode=none,filenamemangle=s/^.*?(\d[\d\.-]*@ARCHIVE_EXT@)/node-babel-plugin-syntax-export-namespace-from-$1/" \
+ https://registry.npmjs.org/@babel/plugin-syntax-export-namespace-from https://registry.npmjs.org/@babel/plugin-syntax-export-namespace-from/-/plugin-syntax-export-namespace-from-([\d\.]+)@ARCHIVE_EXT@ checksum
+
+opts="searchmode=plain,component=babel-plugin-syntax-json-strings,ctype=nodejs,pgpmode=none,filenamemangle=s/^.*?(\d[\d\.-]*@ARCHIVE_EXT@)/node-babel-plugin-syntax-json-strings-$1/" \
+ https://registry.npmjs.org/@babel/plugin-syntax-json-strings https://registry.npmjs.org/@babel/plugin-syntax-json-strings/-/plugin-syntax-json-strings-([\d\.]+)@ARCHIVE_EXT@ checksum
+
+opts="searchmode=plain,component=babel-plugin-syntax-logical-assignment-operators,ctype=nodejs,pgpmode=none,filenamemangle=s/^.*?(\d[\d\.-]*@ARCHIVE_EXT@)/node-babel-plugin-syntax-logical-assignment-operators-$1/" \
+ https://registry.npmjs.org/@babel/plugin-syntax-logical-assignment-operators https://registry.npmjs.org/@babel/plugin-syntax-logical-assignment-operators/-/plugin-syntax-logical-assignment-operators-([\d\.]+)@ARCHIVE_EXT@ checksum
+
+opts="searchmode=plain,component=babel-plugin-syntax-nullish-coalescing-operator,ctype=nodejs,pgpmode=none,filenamemangle=s/^.*?(\d[\d\.-]*@ARCHIVE_EXT@)/node-babel-plugin-syntax-nullish-coalescing-operator-$1/" \
+ https://registry.npmjs.org/@babel/plugin-syntax-nullish-coalescing-operator https://registry.npmjs.org/@babel/plugin-syntax-nullish-coalescing-operator/-/plugin-syntax-nullish-coalescing-operator-([\d\.]+)@ARCHIVE_EXT@ checksum
+
+opts="searchmode=plain,component=babel-plugin-syntax-numeric-separator,ctype=nodejs,pgpmode=none,filenamemangle=s/^.*?(\d[\d\.-]*@ARCHIVE_EXT@)/node-babel-plugin-syntax-numeric-separator-$1/" \
+ https://registry.npmjs.org/@babel/plugin-syntax-numeric-separator https://registry.npmjs.org/@babel/plugin-syntax-numeric-separator/-/plugin-syntax-numeric-separator-([\d\.]+)@ARCHIVE_EXT@ checksum
+
+opts="searchmode=plain,component=babel-plugin-syntax-object-rest-spread,ctype=nodejs,pgpmode=none,filenamemangle=s/^.*?(\d[\d\.-]*@ARCHIVE_EXT@)/node-babel-plugin-syntax-object-rest-spread-$1/" \
+ https://registry.npmjs.org/@babel/plugin-syntax-object-rest-spread https://registry.npmjs.org/@babel/plugin-syntax-object-rest-spread/-/plugin-syntax-object-rest-spread-([\d\.]+)@ARCHIVE_EXT@ checksum
+
+opts="searchmode=plain,component=babel-plugin-syntax-optional-catch-binding,ctype=nodejs,pgpmode=none,filenamemangle=s/^.*?(\d[\d\.-]*@ARCHIVE_EXT@)/node-babel-plugin-syntax-optional-catch-binding-$1/" \
+ https://registry.npmjs.org/@babel/plugin-syntax-optional-catch-binding https://registry.npmjs.org/@babel/plugin-syntax-optional-catch-binding/-/plugin-syntax-optional-catch-binding-([\d\.]+)@ARCHIVE_EXT@ checksum
+
+opts="searchmode=plain,component=babel-plugin-syntax-optional-chaining,ctype=nodejs,pgpmode=none,filenamemangle=s/^.*?(\d[\d\.-]*@ARCHIVE_EXT@)/node-babel-plugin-syntax-optional-chaining-$1/" \
+ https://registry.npmjs.org/@babel/plugin-syntax-optional-chaining https://registry.npmjs.org/@babel/plugin-syntax-optional-chaining/-/plugin-syntax-optional-chaining-([\d\.]+)@ARCHIVE_EXT@ checksum
+
+opts="searchmode=plain,component=babel-plugin-syntax-private-property-in-object,ctype=nodejs,pgpmode=none,filenamemangle=s/^.*?(\d[\d\.-]*@ARCHIVE_EXT@)/node-babel-plugin-syntax-private-property-in-object-$1/" \
+ https://registry.npmjs.org/@babel/plugin-syntax-private-property-in-object https://registry.npmjs.org/@babel/plugin-syntax-private-property-in-object/-/plugin-syntax-private-property-in-object-([\d\.]+)@ARCHIVE_EXT@ checksum
+
+opts="searchmode=plain,component=babel-plugin-syntax-top-level-await,ctype=nodejs,pgpmode=none,filenamemangle=s/^.*?(\d[\d\.-]*@ARCHIVE_EXT@)/node-babel-plugin-syntax-top-level-await-$1/" \
+ https://registry.npmjs.org/@babel/plugin-syntax-top-level-await https://registry.npmjs.org/@babel/plugin-syntax-top-level-await/-/plugin-syntax-top-level-await-([\d\.]+)@ARCHIVE_EXT@ checksum
+
+opts=\
+component=babel-preset-modules,\
+ctype=nodejs,\
+dversionmangle=auto,\
+filenamemangle=s/.*?(\d[\d\.-]*@ARCHIVE_EXT@)/node-babel-preset-modules-$1/ \
+ https://github.com/babel/preset-modules/tags .*/archive.*/v?([\d\.]+).tar.gz checksum
 
 opts=\
 ctype=nodejs,\
@@ -35,82 +92,8 @@ filenamemangle=s/.*?(\d[\d\.-]*@ARCHIVE_EXT@)/node-js-levenshtein-$1/ \
 
 # It is not recommended use npmregistry. Please investigate more.
 # Take a look at https://wiki.debian.org/debian/watch/
-opts="searchmode=plain,ctype=nodejs,component=babel-preset-modules,pgpmode=none" \
- https://registry.npmjs.org/@babel/preset-modules https://registry.npmjs.org/@babel/preset-modules/-/preset-modules-([\d\.]+)@ARCHIVE_EXT@ checksum
-
-opts=\
-ctype=nodejs,\
-component=babel-plugin-dynamic-import-node,\
-dversionmangle=auto,\
-filenamemangle=s/.*?(\d[\d\.-]*@ARCHIVE_EXT@)/node-babel-plugin-dynamic-import-node-$1/ \
- https://github.com/airbnb/babel-plugin-dynamic-import-node/tags .*/archive/.*/v?([\d\.]+).tar.gz checksum
-
-# It is not recommended use npmregistry. Please investigate more.
-# Take a look at https://wiki.debian.org/debian/watch/
 opts="searchmode=plain,ctype=nodejs,component=gensync,pgpmode=none,uversionmangle=s/-beta.*//" \
  https://registry.npmjs.org/gensync https://registry.npmjs.org/gensync/-/gensync-([\w\.\-]+)@ARCHIVE_EXT@ checksum
-
-# It is not recommended use npmregistry. Please investigate more.
-# Take a look at https://wiki.debian.org/debian/watch/
-opts="searchmode=plain,ctype=nodejs,component=babel-plugin-syntax-export-namespace-from,pgpmode=none" \
- https://registry.npmjs.org/@babel/plugin-syntax-export-namespace-from https://registry.npmjs.org/@babel/plugin-syntax-export-namespace-from/-/plugin-syntax-export-namespace-from-([\d\.]+)@ARCHIVE_EXT@ checksum
-
-# It is not recommended use npmregistry. Please investigate more.
-# Take a look at https://wiki.debian.org/debian/watch/
-opts="searchmode=plain,ctype=nodejs,component=babel-plugin-syntax-object-rest-spread,pgpmode=none" \
- https://registry.npmjs.org/@babel/plugin-syntax-object-rest-spread https://registry.npmjs.org/@babel/plugin-syntax-object-rest-spread/-/plugin-syntax-object-rest-spread-([\d\.]+)@ARCHIVE_EXT@ checksum
-
-# It is not recommended use npmregistry. Please investigate more.
-# Take a look at https://wiki.debian.org/debian/watch/
-opts="searchmode=plain,ctype=nodejs,component=babel-plugin-syntax-async-generators,pgpmode=none" \
- https://registry.npmjs.org/@babel/plugin-syntax-async-generators https://registry.npmjs.org/@babel/plugin-syntax-async-generators/-/plugin-syntax-async-generators-([\d\.]+)@ARCHIVE_EXT@ checksum
-
-# It is not recommended use npmregistry. Please investigate more.
-# Take a look at https://wiki.debian.org/debian/watch/
-opts="searchmode=plain,ctype=nodejs,component=babel-plugin-syntax-dynamic-import,pgpmode=none" \
- https://registry.npmjs.org/@babel/plugin-syntax-dynamic-import https://registry.npmjs.org/@babel/plugin-syntax-dynamic-import/-/plugin-syntax-dynamic-import-([\d\.]+)@ARCHIVE_EXT@ checksum
-
-# It is not recommended use npmregistry. Please investigate more.
-# Take a look at https://wiki.debian.org/debian/watch/
-opts="searchmode=plain,ctype=nodejs,component=babel-plugin-syntax-json-strings,pgpmode=none" \
- https://registry.npmjs.org/@babel/plugin-syntax-json-strings https://registry.npmjs.org/@babel/plugin-syntax-json-strings/-/plugin-syntax-json-strings-([\d\.]+)@ARCHIVE_EXT@ checksum
-
-# It is not recommended use npmregistry. Please investigate more.
-# Take a look at https://wiki.debian.org/debian/watch/
-opts="searchmode=plain,ctype=nodejs,component=babel-plugin-syntax-nullish-coalescing-operator,pgpmode=none" \
- https://registry.npmjs.org/@babel/plugin-syntax-nullish-coalescing-operator https://registry.npmjs.org/@babel/plugin-syntax-nullish-coalescing-operator/-/plugin-syntax-nullish-coalescing-operator-([\d\.]+)@ARCHIVE_EXT@ checksum
-
-# It is not recommended use npmregistry. Please investigate more.
-# Take a look at https://wiki.debian.org/debian/watch/
-opts="searchmode=plain,ctype=nodejs,component=babel-plugin-syntax-optional-catch-binding,pgpmode=none" \
- https://registry.npmjs.org/@babel/plugin-syntax-optional-catch-binding https://registry.npmjs.org/@babel/plugin-syntax-optional-catch-binding/-/plugin-syntax-optional-catch-binding-([\d\.]+)@ARCHIVE_EXT@ checksum
-
-# It is not recommended use npmregistry. Please investigate more.
-# Take a look at https://wiki.debian.org/debian/watch/
-opts="searchmode=plain,ctype=nodejs,component=babel-plugin-syntax-optional-chaining,pgpmode=none" \
- https://registry.npmjs.org/@babel/plugin-syntax-optional-chaining https://registry.npmjs.org/@babel/plugin-syntax-optional-chaining/-/plugin-syntax-optional-chaining-([\d\.]+)@ARCHIVE_EXT@ checksum
-
-# It is not recommended use npmregistry. Please investigate more.
-# Take a look at https://wiki.debian.org/debian/watch/
-opts="searchmode=plain,ctype=nodejs,component=babel-plugin-syntax-logical-assignment-operators,pgpmode=none" \
- https://registry.npmjs.org/@babel/plugin-syntax-logical-assignment-operators https://registry.npmjs.org/@babel/plugin-syntax-logical-assignment-operators/-/plugin-syntax-logical-assignment-operators-([\d\.]+)@ARCHIVE_EXT@ checksum
-
-# It is not recommended use npmregistry. Please investigate more.
-# Take a look at https://wiki.debian.org/debian/watch/
-opts="searchmode=plain,ctype=nodejs,component=babel-plugin-syntax-numeric-separator,pgpmode=none" \
- https://registry.npmjs.org/@babel/plugin-syntax-numeric-separator https://registry.npmjs.org/@babel/plugin-syntax-numeric-separator/-/plugin-syntax-numeric-separator-([\d\.]+)@ARCHIVE_EXT@ checksum
-
-opts=\
-ctype=nodejs,\
-component=babel-preset-current-node-syntax,\
-dversionmangle=auto,\
-filenamemangle=s/.*?(\d[\d\.-]*@ARCHIVE_EXT@)/node-babel-preset-current-node-syntax-$1/ \
- https://github.com/nicolo-ribaudo/babel-preset-current-node-syntax/tags .*/archive/.*/v?([\d\.]+).tar.gz checksum
-
-# It is not recommended use npmregistry. Please investigate more.
-# Take a look at https://wiki.debian.org/debian/watch/
-opts="searchmode=plain,ctype=nodejs,component=babel-plugin-syntax-bigint,pgpmode=none" \
- https://registry.npmjs.org/@babel/plugin-syntax-bigint https://registry.npmjs.org/@babel/plugin-syntax-bigint/-/plugin-syntax-bigint-([\d\.]+)@ARCHIVE_EXT@ checksum
 
 opts="searchmode=plain,ctype=nodejs,component=types-babel-core,pgpmode=none" \
  https://registry.npmjs.org/@types/babel__core https://registry.npmjs.org/@types/babel__core/-/babel__core-([\d\.]+)@ARCHIVE_EXT@ checksum
@@ -133,12 +116,55 @@ opts="searchmode=plain,ctype=nodejs,component=types-babel-template,pgpmode=none"
 opts="searchmode=plain,ctype=nodejs,component=types-babel-traverse,pgpmode=none" \
  https://registry.npmjs.org/@types/babel__traverse https://registry.npmjs.org/@types/babel__traverse/-/babel__traverse-([\d\.]+)@ARCHIVE_EXT@ checksum
 
-# It is not recommended use npmregistry. Please investigate more.
-# Take a look at https://wiki.debian.org/debian/watch/
 opts="searchmode=plain,ctype=nodejs,component=types-babel-types,pgpmode=none" \
  https://registry.npmjs.org/@types/babel-types https://registry.npmjs.org/@types/babel-types/-/babel-types-([\d\.]+)@ARCHIVE_EXT@ checksum
 
+opts="searchmode=plain,component=babel-helper-bindify-decorators,ctype=nodejs,pgpmode=none,filenamemangle=s/^.*?(\d[\d\.-]*@ARCHIVE_EXT@)/node-babel-helper-bindify-decorators-$1/" \
+ https://registry.npmjs.org/@babel/helper-bindify-decorators https://registry.npmjs.org/@babel/helper-bindify-decorators/-/helper-bindify-decorators-([\d\.]+)@ARCHIVE_EXT@ checksum
+
+opts="searchmode=plain,component=babel-helper-call-delegate,ctype=nodejs,pgpmode=none,filenamemangle=s/^.*?(\d[\d\.-]*@ARCHIVE_EXT@)/node-babel-helper-call-delegate-$1/" \
+ https://registry.npmjs.org/@babel/helper-call-delegate https://registry.npmjs.org/@babel/helper-call-delegate/-/helper-call-delegate-([\d\.]+)@ARCHIVE_EXT@ checksum
+
+opts="searchmode=plain,component=babel-helper-explode-class,ctype=nodejs,pgpmode=none,filenamemangle=s/^.*?(\d[\d\.-]*@ARCHIVE_EXT@)/node-babel-helper-explode-class-$1/" \
+ https://registry.npmjs.org/@babel/helper-explode-class https://registry.npmjs.org/@babel/helper-explode-class/-/helper-explode-class-([\d\.]+)@ARCHIVE_EXT@ checksum
+
+opts="searchmode=plain,component=babel-plugin-syntax-module-string-names,ctype=nodejs,pgpmode=none,filenamemangle=s/^.*?(\d[\d\.-]*@ARCHIVE_EXT@)/node-babel-plugin-syntax-module-string-names-$1/" \
+ https://registry.npmjs.org/@babel/plugin-syntax-module-string-names https://registry.npmjs.org/@babel/plugin-syntax-module-string-names/-/plugin-syntax-module-string-names-([\d\.]+)@ARCHIVE_EXT@ checksum
+
+opts=\
+component=babel-plugin-transform-replace-object-assign,\
+ctype=nodejs,\
+dversionmangle=auto,\
+filenamemangle=s/.*?(\d[\d\.-]*@ARCHIVE_EXT@)/node-babel-plugin-transform-replace-object-assign-$1/ \
+ https://github.com/newoga/babel-plugin-transform-replace-object-assign/tags .*/archive.*/v?([\d\.]+).tar.gz checksum
+
+opts=\
+component=babel-preset-airbnb,\
+ctype=nodejs,\
+dversionmangle=auto,\
+filenamemangle=s/.*?(\d[\d\.-]*@ARCHIVE_EXT@)/node-babel-preset-airbnb-$1/ \
+ https://github.com/airbnb/babel-preset-airbnb/tags .*/archive.*/v?([\d\.]+).tar.gz checksum
+
 # It is not recommended use npmregistry. Please investigate more.
 # Take a look at https://wiki.debian.org/debian/watch/
-opts="searchmode=plain,ctype=nodejs,component=babel-plugin-syntax-import-meta,pgpmode=none" \
+opts="searchmode=plain,component=babel-plugin-syntax-import-meta,ctype=nodejs,pgpmode=none,filenamemangle=s/^.*?(\d[\d\.-]*@ARCHIVE_EXT@)/node-babel-plugin-syntax-import-meta-$1/" \
  https://registry.npmjs.org/@babel/plugin-syntax-import-meta https://registry.npmjs.org/@babel/plugin-syntax-import-meta/-/plugin-syntax-import-meta-([\d\.]+)@ARCHIVE_EXT@ checksum
+
+opts=\
+component=babel-preset-current-node-syntax,\
+ctype=nodejs,\
+dversionmangle=auto,\
+filenamemangle=s/.*?(\d[\d\.-]*@ARCHIVE_EXT@)/node-babel-preset-current-node-syntax-$1/ \
+ https://github.com/nicolo-ribaudo/babel-preset-current-node-syntax/tags .*/archive.*/v?([\d\.]+).tar.gz checksum
+
+# It is not recommended use npmregistry. Please investigate more.
+# Take a look at https://wiki.debian.org/debian/watch/
+opts="searchmode=plain,component=babel-plugin-syntax-bigint,ctype=nodejs,pgpmode=none,filenamemangle=s/^.*?(\d[\d\.-]*@ARCHIVE_EXT@)/node-babel-plugin-syntax-bigint-$1/" \
+ https://registry.npmjs.org/@babel/plugin-syntax-bigint https://registry.npmjs.org/@babel/plugin-syntax-bigint/-/plugin-syntax-bigint-([\d\.]+)@ARCHIVE_EXT@ checksum
+
+opts=\
+component=babel-check-duplicated-nodes,\
+ctype=nodejs,\
+dversionmangle=auto,\
+filenamemangle=s/.*?(\d[\d\.-]*@ARCHIVE_EXT@)/node-babel-check-duplicated-nodes-$1/ \
+ https://github.com/Andarist/babel-check-duplicated-nodes/tags .*/archive.*/v?([\d\.]+).tar.gz checksum

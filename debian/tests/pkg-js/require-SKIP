@@ -1,0 +1,7 @@
+@babel/cli
+@babel/eslint-parser
+@babel/eslint-plugin
+@babel/helper-plugin-test-runner
+@babel/helper-transform-fixture-test-runner
+@babel/standalone
+@babel/test-esm

@@ -24,47 +24,41 @@ The plugin can be loaded in your `.eslintrc.*` configuration file as follows: (n
 
 ## Rules
 
-### `@babel/development-internal/dry-error-messages`
+### `@babel/development-internal/report-error-message-format`
 
-Intended for use in `packages/babel-parser/src/**/*`. When enabled, this rule warns when `this.raise()` invocations raise errors that are not imported from a designated error module.
+This rule is inspired by https://github.com/not-an-aardvark/eslint-plugin-eslint-plugin/blob/master/docs/rules/report-message-format.md.
 
-Accepts an object configuration option:
+Intended for use in `packages/babel-parser/src/**/*`. When enabled, this rule warns for inconsistently error messages format in arguments of `makeErrorTemplates` function calls.
 
-```ts
-{
-  errorModule: string
-}
+Basically, it starts with an uppercase Latin letter(A~Z) and ends with a period(.) or a question(?). But it can start with `'keyword'` or `` `code` `` to include JavaScript keywords or code in error messages.
+
+valid:
+
+```js
+makeErrorTemplates({ ThisIsAnError: "This is an error." });
+makeErrorTemplates({ ThisIsAnError: "'this' is an error." });
+makeErrorTemplates({ ThisIsAnError: "`this` is an error." });
+makeErrorTemplates({ ThisIsAnError: "This is an error?" });
+makeErrorTemplates({ ThisIsAnError: "'this' is an error?" });
+makeErrorTemplates({ ThisIsAnError: "`this` is an error?" });
 ```
 
-`errorModule` (required): The rule expects either an absolute path or a module name (for a module in `node_modules`). Please note that the rule will not check anything if` errorModule` is not given.
+invalid:
+
+```js
+makeErrorTemplates({ ThisIsAnError: 'this is an error.' });
+makeErrorTemplates({ ThisIsAnError: 'This is an error' });
+makeErrorTemplates({ ThisIsAnError: 'this is an error?' });
+makeErrorTemplates({ ThisIsAnError: '`this` is an error' });
+makeErrorTemplates({ ThisIsAnError: "'this' is an error" });
+```
 
 Example configuration:
 
 ```js
 {
   rules: {
-    "@babel/development-internal/dry-error-messages": [
-      "error",
-      {
-        errorModule: "@babel/shared-error-messages"
-      }
-    ]
-  }
-}
-```
-and
-```js
-{
-  rules: {
-    "@babel/development-internal/dry-error-messages": [
-      "error",
-      {
-        errorModule: path.resolve(
-          __dirname,
-          "packages/shared-error-messages/lib/index.js"
-        )
-      }
-    ]
+    "@babel/development-internal/report-error-message-format": "error"
   }
 }
 ```

@@ -3,34 +3,47 @@ const path = require('path');
 const PluginError = require('plugin-error');
 const multimatch = require('multimatch');
 const streamfilter = require('streamfilter');
+const toAbsoluteGlob = require('to-absolute-glob');
 
-module.exports = (pattern, options) => {
+module.exports = (pattern, options = {}) => {
 	pattern = typeof pattern === 'string' ? [pattern] : pattern;
-	options = options || {};
 
 	if (!Array.isArray(pattern) && typeof pattern !== 'function') {
 		throw new PluginError('gulp-filter', '`pattern` should be a string, array, or function');
 	}
 
-	return streamfilter((file, enc, cb) => {
+	return streamfilter((file, encoding, callback) => {
 		let match;
 
 		if (typeof pattern === 'function') {
 			match = pattern(file);
 		} else {
-			let relPath = path.relative(file.cwd, file.path);
+			const base = path.dirname(file.path);
+			const patterns = pattern.map(pattern => {
+				// Filename only matching glob, prepend full path.
+				if (!pattern.includes('/')) {
+					if (pattern[0] === '!') {
+						return '!' + path.resolve(base, pattern.slice(1));
+					}
 
-			// If the path leaves the current working directory, then we need to
-			// resolve the absolute path so that the path can be properly matched
-			// by minimatch (via multimatch)
-			if (/^\.\.[\\/]/.test(relPath)) {
-				relPath = path.resolve(relPath);
-			}
+					return path.resolve(base, pattern);
+				}
 
-			match = multimatch(relPath, pattern, options).length > 0;
+				pattern = toAbsoluteGlob(pattern, {cwd: file.cwd, root: options.root});
+
+				// Calling `path.resolve` after `toAbsoluteGlob` is required for removing `..` from path.
+				// This is useful for `../A/B` cases.
+				if (pattern[0] === '!') {
+					return '!' + path.resolve(pattern.slice(1));
+				}
+
+				return path.resolve(pattern);
+			});
+
+			match = multimatch(path.resolve(file.cwd, file.path), patterns, options).length > 0;
 		}
 
-		cb(!match);
+		callback(!match);
 	}, {
 		objectMode: true,
 		passthrough: options.passthrough !== false,

@@ -1,14 +1,115 @@
-import path, { resolve, dirname } from 'path';
+import * as path from 'path';
 import ts from 'typescript';
+import { createRequire } from 'module';
 import MagicString from 'magic-string';
 
+const dts = ".d.ts";
+const formatHost = {
+    getCurrentDirectory: () => ts.sys.getCurrentDirectory(),
+    getNewLine: () => ts.sys.newLine,
+    getCanonicalFileName: ts.sys.useCaseSensitiveFileNames ? (f) => f : (f) => f.toLowerCase(),
+};
+const DEFAULT_OPTIONS = {
+    // Ensure ".d.ts" modules are generated
+    declaration: true,
+    // Skip ".js" generation
+    noEmit: false,
+    emitDeclarationOnly: true,
+    // Skip code generation when error occurs
+    noEmitOnError: true,
+    // Avoid extra work
+    checkJs: false,
+    declarationMap: false,
+    skipLibCheck: true,
+    // Ensure TS2742 errors are visible
+    preserveSymlinks: true,
+    // Ensure we can parse the latest code
+    target: ts.ScriptTarget.ESNext,
+};
+function getCompilerOptions(input, overrideOptions) {
+    const compilerOptions = { ...DEFAULT_OPTIONS, ...overrideOptions };
+    let dirName = path.dirname(input);
+    let dtsFiles = [];
+    const configPath = ts.findConfigFile(dirName, ts.sys.fileExists);
+    if (!configPath) {
+        return { dtsFiles, dirName, compilerOptions };
+    }
+    dirName = path.dirname(configPath);
+    const { config, error } = ts.readConfigFile(configPath, ts.sys.readFile);
+    if (error) {
+        console.error(ts.formatDiagnostic(error, formatHost));
+        return { dtsFiles, dirName, compilerOptions };
+    }
+    const { fileNames, options, errors } = ts.parseJsonConfigFileContent(config, ts.sys, dirName);
+    dtsFiles = fileNames.filter((name) => name.endsWith(dts));
+    if (errors.length) {
+        console.error(ts.formatDiagnostics(errors, formatHost));
+        return { dtsFiles, dirName, compilerOptions };
+    }
+    return {
+        dtsFiles,
+        dirName,
+        compilerOptions: {
+            ...options,
+            ...compilerOptions,
+        },
+    };
+}
+function createProgram$1(fileName, overrideOptions) {
+    const { dtsFiles, compilerOptions } = getCompilerOptions(fileName, overrideOptions);
+    return ts.createProgram([fileName].concat(Array.from(dtsFiles)), compilerOptions, ts.createCompilerHost(compilerOptions, true));
+}
+function createPrograms(input, overrideOptions) {
+    const programs = [];
+    let inputs = [];
+    let dtsFiles = new Set();
+    let dirName = "";
+    let compilerOptions = {};
+    for (let main of input) {
+        if (main.endsWith(dts)) {
+            continue;
+        }
+        main = path.resolve(main);
+        const options = getCompilerOptions(main, overrideOptions);
+        options.dtsFiles.forEach(dtsFiles.add, dtsFiles);
+        if (!inputs.length) {
+            inputs.push(main);
+            ({ dirName, compilerOptions } = options);
+            continue;
+        }
+        if (options.dirName === dirName) {
+            inputs.push(main);
+        }
+        else {
+            const host = ts.createCompilerHost(compilerOptions, true);
+            const program = ts.createProgram(inputs.concat(Array.from(dtsFiles)), compilerOptions, host);
+            programs.push(program);
+            inputs = [main];
+            ({ dirName, compilerOptions } = options);
+        }
+    }
+    if (inputs.length) {
+        const host = ts.createCompilerHost(compilerOptions, true);
+        const program = ts.createProgram(inputs.concat(Array.from(dtsFiles)), compilerOptions, host);
+        programs.push(program);
+    }
+    return programs;
+}
+
 function getCodeFrame() {
+    let codeFrameColumns = undefined;
     try {
-        const { codeFrameColumns } = require("@babel/code-frame");
+        ({ codeFrameColumns } = require("@babel/code-frame"));
         return codeFrameColumns;
     }
-    catch (_a) { }
-    // istanbul ignore next
+    catch {
+        try {
+            const esmRequire = createRequire(import.meta.url);
+            ({ codeFrameColumns } = esmRequire("@babel/code-frame"));
+            return codeFrameColumns;
+        }
+        catch { }
+    }
     return undefined;
 }
 function getLocation(node) {
@@ -24,7 +125,6 @@ function frameNode(node) {
     const codeFrame = getCodeFrame();
     const sourceFile = node.getSourceFile();
     const code = sourceFile.getFullText();
-    // istanbul ignore else
     const location = getLocation(node);
     if (codeFrame) {
         return ("\n" +
@@ -69,26 +169,57 @@ class NamespaceFixer {
                 continue;
             }
             // When generating multiple chunks, rollup links those via import
-            // statements, obviously. But rollup uses full filenames with extension,
-            // which typescript does not like. So make sure to remove those here.
+            // statements, obviously. But rollup uses full filenames with typescript extension,
+            // which typescript does not like. So make sure to change those to javascript extension here.
+            // `.d.ts` -> `.js`
+            // `.d.cts` -> `.cjs`
+            // `.d.mts` -> `.mjs`
             if ((ts.isImportDeclaration(node) || ts.isExportDeclaration(node)) &&
                 node.moduleSpecifier &&
                 ts.isStringLiteral(node.moduleSpecifier)) {
                 let { text } = node.moduleSpecifier;
-                if (text.startsWith(".") && text.endsWith(".d.ts")) {
+                if (text.startsWith(".") && (text.endsWith(".d.ts") || text.endsWith(".d.cts") || text.endsWith(".d.mts"))) {
+                    let start = node.moduleSpecifier.getStart() + 1; // +1 to account for the quote
                     let end = node.moduleSpecifier.getEnd() - 1; // -1 to account for the quote
                     namespaces.unshift({
                         name: "",
                         exports: [],
                         location: {
-                            start: end - 5,
+                            start,
                             end,
                         },
+                        textBeforeCodeAfter: text
+                            .replace(/\.d\.ts$/, ".js")
+                            .replace(/\.d\.cts$/, ".cjs")
+                            .replace(/\.d\.mts$/, ".mjs"),
                     });
                 }
             }
+            // Remove redundant `{ Foo as Foo }` exports from a namespace which we
+            // added in pre-processing to fix up broken renaming
+            if (ts.isModuleDeclaration(node) && node.body && ts.isModuleBlock(node.body)) {
+                for (const stmt of node.body.statements) {
+                    if (ts.isExportDeclaration(stmt) && stmt.exportClause) {
+                        if (ts.isNamespaceExport(stmt.exportClause)) {
+                            continue;
+                        }
+                        for (const decl of stmt.exportClause.elements) {
+                            if (decl.propertyName && decl.propertyName.getText() == decl.name.getText()) {
+                                namespaces.unshift({
+                                    name: "",
+                                    exports: [],
+                                    location: {
+                                        start: decl.propertyName.getEnd(),
+                                        end: decl.name.getEnd(),
+                                    },
+                                });
+                            }
+                        }
+                    }
+                }
+            }
             if (ts.isClassDeclaration(node)) {
-                items[node.name.getText()] = { type: "class", generics: node.typeParameters && node.typeParameters.length };
+                items[node.name.getText()] = { type: "class", generics: node.typeParameters };
             }
             else if (ts.isFunctionDeclaration(node)) {
                 // a function has generics, but these don’t need to be specified explicitly,
@@ -96,13 +227,10 @@ class NamespaceFixer {
                 items[node.name.getText()] = { type: "function" };
             }
             else if (ts.isInterfaceDeclaration(node)) {
-                items[node.name.getText()] = {
-                    type: "interface",
-                    generics: node.typeParameters && node.typeParameters.length,
-                };
+                items[node.name.getText()] = { type: "interface", generics: node.typeParameters };
             }
             else if (ts.isTypeAliasDeclaration(node)) {
-                items[node.name.getText()] = { type: "type", generics: node.typeParameters && node.typeParameters.length };
+                items[node.name.getText()] = { type: "type", generics: node.typeParameters };
             }
             else if (ts.isModuleDeclaration(node) && ts.isIdentifier(node.name)) {
                 items[node.name.getText()] = { type: "namespace" };
@@ -131,7 +259,7 @@ class NamespaceFixer {
             const exports = [];
             for (const prop of obj.properties) {
                 if (!ts.isPropertyAssignment(prop) ||
-                    !ts.isIdentifier(prop.name) ||
+                    !(ts.isIdentifier(prop.name) || ts.isStringLiteral(prop.name)) ||
                     (prop.name.text !== "__proto__" && !ts.isIdentifier(prop.initializer))) {
                     throw new UnsupportedSyntaxError(prop, "Expected a property assignment");
                 }
@@ -139,7 +267,7 @@ class NamespaceFixer {
                     continue;
                 }
                 exports.push({
-                    exportedName: prop.name.getText(),
+                    exportedName: prop.name.text,
                     localName: prop.initializer.getText(),
                 });
             }
@@ -153,6 +281,7 @@ class NamespaceFixer {
         return { namespaces, itemTypes: items };
     }
     fix() {
+        var _a;
         let code = this.sourceFile.getFullText();
         const { namespaces, itemTypes } = this.findNamespaces();
         for (const ns of namespaces) {
@@ -160,16 +289,16 @@ class NamespaceFixer {
             code = code.slice(0, ns.location.start);
             for (const { exportedName, localName } of ns.exports) {
                 if (exportedName === localName) {
-                    const { type, generics } = itemTypes[localName];
+                    const { type, generics } = itemTypes[localName] || {};
                     if (type === "interface" || type === "type") {
                         // an interface is just a type
                         const typeParams = renderTypeParams(generics);
-                        code += `type ${ns.name}_${exportedName}${typeParams} = ${localName}${typeParams};\n`;
+                        code += `type ${ns.name}_${exportedName}${typeParams.in} = ${localName}${typeParams.out};\n`;
                     }
                     else if (type === "enum" || type === "class") {
                         // enums and classes are both types and values
                         const typeParams = renderTypeParams(generics);
-                        code += `type ${ns.name}_${exportedName}${typeParams} = ${localName}${typeParams};\n`;
+                        code += `type ${ns.name}_${exportedName}${typeParams.in} = ${localName}${typeParams.out};\n`;
                         code += `declare const ${ns.name}_${exportedName}: typeof ${localName};\n`;
                     }
                     else {
@@ -192,16 +321,20 @@ class NamespaceFixer {
                 code += `  };\n`;
                 code += `}`;
             }
+            code += (_a = ns.textBeforeCodeAfter) !== null && _a !== void 0 ? _a : "";
             code += codeAfter;
         }
         return code;
     }
 }
-function renderTypeParams(num) {
-    if (!num) {
-        return "";
+function renderTypeParams(typeParameters) {
+    if (!typeParameters || !typeParameters.length) {
+        return { in: "", out: "" };
     }
-    return `<${Array.from({ length: num }, (_, i) => `_${i}`).join(", ")}>`;
+    return {
+        in: `<${typeParameters.map((param) => param.getText()).join(", ")}>`,
+        out: `<${typeParameters.map((param) => param.name.getText()).join(", ")}>`,
+    };
 }
 
 let IDs = 1;
@@ -291,9 +424,11 @@ function convertExpression(node) {
             end: node.name.getEnd(),
         });
     }
-    // istanbul ignore else
     if (ts.isIdentifier(node)) {
         return createIdentifier(node);
+    }
+    else if (node.kind == ts.SyntaxKind.NullKeyword) {
+        return { type: "Literal", value: null };
     }
     else {
         throw new UnsupportedSyntaxError(node);
@@ -320,6 +455,8 @@ function matchesModifier(node, flags) {
  *   them.
  * - [x] Generate a separate `export {}` statement for any item which had its
  *   modifiers rewritten.
+ * - [ ] Duplicate the identifiers of a namespace `export`, so that renaming does
+ *   not break it
  */
 function preProcess({ sourceFile }) {
     const code = new MagicString(sourceFile.getFullText());
@@ -342,6 +479,8 @@ function preProcess({ sourceFile }) {
      * - Maybe collect the name of the default export if present.
      * - Fix the modifiers of all the items.
      * - Collect the ranges of each named statement.
+     * - Duplicate the identifiers of a namespace `export`, so that renaming does
+     *   not break it
      */
     for (const node of sourceFile.statements) {
         if (ts.isEmptyStatement(node)) {
@@ -368,6 +507,10 @@ function preProcess({ sourceFile }) {
                 if (!(node.flags & ts.NodeFlags.GlobalAugmentation)) {
                     pushNamedNode(name, [getStart(node), getEnd(node)]);
                 }
+            }
+            // duplicate exports of namespaces
+            if (ts.isModuleDeclaration(node)) {
+                duplicateExports(code, node);
             }
             fixModifiers(code, node);
         }
@@ -489,11 +632,23 @@ function preProcess({ sourceFile }) {
     for (const [fileId, importName] of inlineImports.entries()) {
         code.prepend(`import * as ${importName} from "${fileId}";\n`);
     }
+    const lineStarts = sourceFile.getLineStarts();
     // and collect/remove all the typeReferenceDirectives
     const typeReferences = new Set();
-    const lineStarts = sourceFile.getLineStarts();
     for (const ref of sourceFile.typeReferenceDirectives) {
         typeReferences.add(ref.fileName);
+        const { line } = sourceFile.getLineAndCharacterOfPosition(ref.pos);
+        const start = lineStarts[line];
+        let end = sourceFile.getLineEndOfPosition(ref.pos);
+        if (code.slice(end, end + 1) == "\n") {
+            end += 1;
+        }
+        code.remove(start, end);
+    }
+    // and collect/remove all the fileReferenceDirectives
+    const fileReferences = new Set();
+    for (const ref of sourceFile.referencedFiles) {
+        fileReferences.add(ref.fileName);
         const { line } = sourceFile.getLineAndCharacterOfPosition(ref.pos);
         const start = lineStarts[line];
         let end = sourceFile.getLineEndOfPosition(ref.pos);
@@ -505,6 +660,7 @@ function preProcess({ sourceFile }) {
     return {
         code,
         typeReferences,
+        fileReferences,
     };
     function checkInlineImport(node) {
         ts.forEachChild(node, checkInlineImport);
@@ -580,6 +736,23 @@ function fixModifiers(code, node) {
         code.appendRight(node.getStart(), "declare ");
     }
 }
+function duplicateExports(code, module) {
+    if (!module.body || !ts.isModuleBlock(module.body)) {
+        return;
+    }
+    for (const node of module.body.statements) {
+        if (ts.isExportDeclaration(node) && node.exportClause) {
+            if (ts.isNamespaceExport(node.exportClause)) {
+                continue;
+            }
+            for (const decl of node.exportClause.elements) {
+                if (!decl.propertyName) {
+                    code.appendLeft(decl.name.getEnd(), ` as ${decl.name.getText()}`);
+                }
+            }
+        }
+    }
+}
 function getStart(node) {
     const start = node.getFullStart();
     return start + (newlineAt(node, start) ? 1 : 0);
@@ -590,96 +763,6 @@ function getEnd(node) {
 }
 function newlineAt(node, idx) {
     return node.getSourceFile().getFullText()[idx] == "\n";
-}
-
-const dts = ".d.ts";
-const formatHost = {
-    getCurrentDirectory: () => ts.sys.getCurrentDirectory(),
-    getNewLine: () => ts.sys.newLine,
-    getCanonicalFileName: ts.sys.useCaseSensitiveFileNames ? (f) => f : (f) => f.toLowerCase(),
-};
-const OPTIONS_OVERRIDE = {
-    // Ensure ".d.ts" modules are generated
-    declaration: true,
-    // Skip ".js" generation
-    noEmit: false,
-    emitDeclarationOnly: true,
-    // Skip code generation when error occurs
-    noEmitOnError: true,
-    // Avoid extra work
-    checkJs: false,
-    declarationMap: false,
-    skipLibCheck: true,
-    // Ensure TS2742 errors are visible
-    preserveSymlinks: true,
-    // Ensure we can parse the latest code
-    target: ts.ScriptTarget.ESNext,
-};
-function getCompilerOptions(input, overrideOptions) {
-    const compilerOptions = Object.assign(Object.assign({}, overrideOptions), OPTIONS_OVERRIDE);
-    let dirName = dirname(input);
-    let dtsFiles = [];
-    const configPath = ts.findConfigFile(dirname(input), ts.sys.fileExists);
-    if (!configPath) {
-        return { dtsFiles, dirName, compilerOptions };
-    }
-    dirName = dirname(configPath);
-    const { config, error } = ts.readConfigFile(configPath, ts.sys.readFile);
-    if (error) {
-        console.error(ts.formatDiagnostic(error, formatHost));
-        return { dtsFiles, dirName, compilerOptions };
-    }
-    const { fileNames, options, errors } = ts.parseJsonConfigFileContent(config, ts.sys, dirName);
-    dtsFiles = fileNames.filter((name) => name.endsWith(dts));
-    if (errors.length) {
-        console.error(ts.formatDiagnostics(errors, formatHost));
-        return { dtsFiles, dirName, compilerOptions };
-    }
-    return {
-        dtsFiles,
-        dirName,
-        compilerOptions: Object.assign(Object.assign({}, options), compilerOptions),
-    };
-}
-function createProgram$1(fileName, overrideOptions) {
-    const { dtsFiles, compilerOptions } = getCompilerOptions(fileName, overrideOptions);
-    return ts.createProgram([fileName].concat(Array.from(dtsFiles)), compilerOptions, ts.createCompilerHost(compilerOptions, true));
-}
-function createPrograms(input, overrideOptions) {
-    const programs = [];
-    let inputs = [];
-    let dtsFiles = new Set();
-    let dirName = "";
-    let compilerOptions = {};
-    for (let main of input) {
-        if (main.endsWith(dts)) {
-            continue;
-        }
-        main = resolve(main);
-        const options = getCompilerOptions(main, overrideOptions);
-        options.dtsFiles.forEach(dtsFiles.add, dtsFiles);
-        if (!inputs.length) {
-            inputs.push(main);
-            ({ dirName, compilerOptions } = options);
-            continue;
-        }
-        if (options.dirName === dirName) {
-            inputs.push(main);
-        }
-        else {
-            const host = ts.createCompilerHost(compilerOptions, true);
-            const program = ts.createProgram(inputs.concat(Array.from(dtsFiles)), compilerOptions, host);
-            programs.push(program);
-            inputs = [main];
-            ({ dirName, compilerOptions } = options);
-        }
-    }
-    if (inputs.length) {
-        const host = ts.createCompilerHost(compilerOptions, true);
-        const program = ts.createProgram(inputs.concat(Array.from(dtsFiles)), compilerOptions, host);
-        programs.push(program);
-    }
-    return programs;
 }
 
 const IGNORE_TYPENODES = new Set([
@@ -794,7 +877,7 @@ class DeclarationScope {
             return;
         }
         const { expression } = node.name;
-        if (ts.isLiteralExpression(expression)) {
+        if (ts.isLiteralExpression(expression) || ts.isPrefixUnaryExpression(expression)) {
             return;
         }
         if (ts.isIdentifier(expression)) {
@@ -837,7 +920,6 @@ class DeclarationScope {
                 this.convertTypeNode(node.type);
                 continue;
             }
-            // istanbul ignore else
             if (ts.isMethodDeclaration(node) ||
                 ts.isMethodSignature(node) ||
                 ts.isConstructorDeclaration(node) ||
@@ -948,18 +1030,22 @@ class DeclarationScope {
             }
             return;
         }
-        // istanbul ignore else
         if (ts.isInferTypeNode(node)) {
-            this.pushTypeVariable(node.typeParameter.name);
+            const { typeParameter } = node;
+            this.convertTypeNode(typeParameter.constraint);
+            this.pushTypeVariable(typeParameter.name);
             return;
         }
         else {
             throw new UnsupportedSyntaxError(node);
         }
     }
-    convertNamespace(node) {
+    convertNamespace(node, relaxedModuleBlock = false) {
         this.pushScope();
-        // istanbul ignore if
+        if (relaxedModuleBlock && node.body && ts.isModuleDeclaration(node.body)) {
+            this.convertNamespace(node.body, true);
+            return;
+        }
         if (!node.body || !ts.isModuleBlock(node.body)) {
             throw new UnsupportedSyntaxError(node, `namespace must have a "ModuleBlock" body.`);
         }
@@ -972,7 +1058,6 @@ class DeclarationScope {
                 ts.isInterfaceDeclaration(stmt) ||
                 ts.isTypeAliasDeclaration(stmt) ||
                 ts.isModuleDeclaration(stmt)) {
-                // istanbul ignore else
                 if (stmt.name && ts.isIdentifier(stmt.name)) {
                     this.pushTypeVariable(stmt.name);
                 }
@@ -983,7 +1068,6 @@ class DeclarationScope {
             }
             if (ts.isVariableStatement(stmt)) {
                 for (const decl of stmt.declarationList.declarations) {
-                    // istanbul ignore else
                     if (ts.isIdentifier(decl.name)) {
                         this.pushTypeVariable(decl.name);
                     }
@@ -993,7 +1077,6 @@ class DeclarationScope {
                 }
                 continue;
             }
-            // istanbul ignore else
             if (ts.isExportDeclaration(stmt)) ;
             else {
                 throw new UnsupportedSyntaxError(stmt, `namespace child (hoisting) not supported yet`);
@@ -1027,14 +1110,13 @@ class DeclarationScope {
                 continue;
             }
             if (ts.isModuleDeclaration(stmt)) {
-                this.convertNamespace(stmt);
+                this.convertNamespace(stmt, relaxedModuleBlock);
                 continue;
             }
             if (ts.isEnumDeclaration(stmt)) {
                 // noop
                 continue;
             }
-            // istanbul ignore else
             if (ts.isExportDeclaration(stmt)) {
                 if (stmt.exportClause) {
                     if (ts.isNamespaceExport(stmt.exportClause)) {
@@ -1054,12 +1136,14 @@ class DeclarationScope {
     }
 }
 
+function convert({ sourceFile }) {
+    const transformer = new Transformer(sourceFile);
+    return transformer.transform();
+}
 class Transformer {
     constructor(sourceFile) {
         this.sourceFile = sourceFile;
-        this.typeReferences = new Set();
         this.declarations = new Map();
-        this.exports = new Set();
         this.ast = createProgram(sourceFile);
         for (const stmt of sourceFile.statements) {
             this.convertStatement(stmt);
@@ -1068,7 +1152,6 @@ class Transformer {
     transform() {
         return {
             ast: this.ast,
-            typeReferences: this.typeReferences,
         };
     }
     pushStatement(node) {
@@ -1130,7 +1213,6 @@ class Transformer {
             // just ignore `export as namespace FOO` statements…
             return this.removeStatement(node);
         }
-        // istanbul ignore else
         if (ts.isImportDeclaration(node) || ts.isImportEqualsDeclaration(node)) {
             return this.convertImportDeclaration(node);
         }
@@ -1152,7 +1234,7 @@ class Transformer {
         const isGlobalAugmentation = node.flags & ts.NodeFlags.GlobalAugmentation;
         if (isGlobalAugmentation || !ts.isIdentifier(node.name)) {
             const scope = this.createDeclaration(node);
-            scope.convertNamespace(node);
+            scope.convertNamespace(node, true);
             return;
         }
         const scope = this.createDeclaration(node, node.name);
@@ -1164,7 +1246,6 @@ class Transformer {
         scope.pushIdentifierReference(node.name);
     }
     convertFunctionDeclaration(node) {
-        // istanbul ignore if
         if (!node.name) {
             throw new UnsupportedSyntaxError(node, `FunctionDeclaration should have a name`);
         }
@@ -1173,7 +1254,6 @@ class Transformer {
         scope.convertParametersAndType(node);
     }
     convertClassOrInterfaceDeclaration(node) {
-        // istanbul ignore if
         if (!node.name) {
             throw new UnsupportedSyntaxError(node, `ClassDeclaration / InterfaceDeclaration should have a name`);
         }
@@ -1191,12 +1271,10 @@ class Transformer {
     }
     convertVariableStatement(node) {
         const { declarations } = node.declarationList;
-        // istanbul ignore if
         if (declarations.length !== 1) {
             throw new UnsupportedSyntaxError(node, `VariableStatement with more than one declaration not yet supported`);
         }
         for (const decl of declarations) {
-            // istanbul ignore if
             if (!ts.isIdentifier(decl.name)) {
                 throw new UnsupportedSyntaxError(node, `VariableDeclaration must have a name`);
             }
@@ -1306,8 +1384,125 @@ class Transformer {
     }
 }
 
+function parse(fileName, code) {
+    return ts.createSourceFile(fileName, code, ts.ScriptTarget.Latest, true);
+}
+/**
+ * This is the *transform* part of `rollup-plugin-dts`.
+ *
+ * It sets a few input and output options, and otherwise is the core part of the
+ * plugin responsible for bundling `.d.ts` files.
+ *
+ * That itself is a multi-step process:
+ *
+ * 1. The plugin has a preprocessing step that moves code around and cleans it
+ *    up a bit, so that later steps can work with it easier. See `preprocess.ts`.
+ * 2. It then converts the TypeScript AST into a ESTree-like AST that rollup
+ *    understands. See `Transformer.ts`.
+ * 3. After rollup is finished, the plugin will postprocess the output in a
+ *    `renderChunk` hook. As rollup usually outputs javascript, it can output
+ *    some code that is invalid in the context of a `.d.ts` file. In particular,
+ *    the postprocess convert any javascript code that was created for namespace
+ *    exports into TypeScript namespaces. See `NamespaceFixer.ts`.
+ */
+const transform = () => {
+    const allTypeReferences = new Map();
+    const allFileReferences = new Map();
+    return {
+        name: "dts-transform",
+        options(options) {
+            const { onwarn } = options;
+            return {
+                ...options,
+                onwarn(warning, warn) {
+                    if (warning.code != "CIRCULAR_DEPENDENCY") {
+                        if (onwarn) {
+                            onwarn(warning, warn);
+                        }
+                        else {
+                            warn(warning);
+                        }
+                    }
+                },
+                treeshake: {
+                    moduleSideEffects: "no-external",
+                    propertyReadSideEffects: true,
+                    unknownGlobalSideEffects: false,
+                },
+            };
+        },
+        outputOptions(options) {
+            return {
+                ...options,
+                chunkFileNames: options.chunkFileNames || "[name]-[hash].d.ts",
+                entryFileNames: options.entryFileNames || "[name].d.ts",
+                format: "es",
+                exports: "named",
+                compact: false,
+                freeze: true,
+                interop: false,
+                namespaceToStringTag: false,
+                strict: false,
+            };
+        },
+        transform(code, fileName) {
+            let sourceFile = parse(fileName, code);
+            const preprocessed = preProcess({ sourceFile });
+            // `sourceFile.fileName` here uses forward slashes
+            allTypeReferences.set(sourceFile.fileName, preprocessed.typeReferences);
+            allFileReferences.set(sourceFile.fileName, preprocessed.fileReferences);
+            code = preprocessed.code.toString();
+            sourceFile = parse(fileName, code);
+            const converted = convert({ sourceFile });
+            if (process.env.DTS_DUMP_AST) {
+                console.log(fileName);
+                console.log(code);
+                console.log(JSON.stringify(converted.ast.body, undefined, 2));
+            }
+            return { code, ast: converted.ast, map: preprocessed.code.generateMap() };
+        },
+        renderChunk(code, chunk, options) {
+            const source = parse(chunk.fileName, code);
+            const fixer = new NamespaceFixer(source);
+            const typeReferences = new Set();
+            const fileReferences = new Set();
+            for (const fileName of Object.keys(chunk.modules)) {
+                for (const ref of allTypeReferences.get(fileName.split("\\").join("/")) || []) {
+                    typeReferences.add(ref);
+                }
+                for (const ref of allFileReferences.get(fileName.split("\\").join("/")) || []) {
+                    if (ref.startsWith('.')) {
+                        // Need absolute path of the target file here
+                        const absolutePathToOriginal = path.join(path.dirname(fileName), ref);
+                        const chunkFolder = (options.file && path.dirname(options.file)) || (chunk.facadeModuleId && path.dirname(chunk.facadeModuleId)) || ".";
+                        let targetRelPath = path.relative(chunkFolder, absolutePathToOriginal).split("\\").join("/");
+                        if (targetRelPath[0] !== ".") {
+                            targetRelPath = "./" + targetRelPath;
+                        }
+                        fileReferences.add(targetRelPath);
+                    }
+                    else {
+                        fileReferences.add(ref);
+                    }
+                }
+            }
+            code = writeBlock(Array.from(fileReferences, (ref) => `/// <reference path="${ref}" />`));
+            code += writeBlock(Array.from(typeReferences, (ref) => `/// <reference types="${ref}" />`));
+            code += fixer.fix();
+            return { code, map: { mappings: "" } };
+        },
+    };
+};
+function writeBlock(codes) {
+    if (codes.length) {
+        return codes.join("\n") + "\n";
+    }
+    return "";
+}
+
 const tsx = /\.(t|j)sx?$/;
 const plugin = (options = {}) => {
+    const transformPlugin = transform();
     const { respectExternal = false, compilerOptions = {} } = options;
     // There exists one Program object per entry point,
     // except when all entry points are ".d.ts" modules.
@@ -1318,9 +1513,7 @@ const plugin = (options = {}) => {
         // Create any `ts.SourceFile` objects on-demand for ".d.ts" modules,
         // but only when there are zero ".ts" entry points.
         if (!programs.length && fileName.endsWith(dts)) {
-            const code = ts.sys.readFile(fileName, "utf8");
-            if (code)
-                source = ts.createSourceFile(fileName, code, ts.ScriptTarget.Latest, true);
+            source = true;
         }
         else {
             // Rollup doesn't tell you the entry point of each module in the bundle,
@@ -1332,22 +1525,6 @@ const plugin = (options = {}) => {
             }
         }
         return { source, program };
-    }
-    // Parse a TypeScript module into an ESTree program.
-    const allTypeReferences = new Map();
-    function transformFile(input) {
-        const preprocessed = preProcess({ sourceFile: input });
-        const code = preprocessed.code.toString();
-        input = ts.createSourceFile(input.fileName, code, ts.ScriptTarget.Latest, true);
-        const transformer = new Transformer(input);
-        const output = transformer.transform();
-        allTypeReferences.set(input.fileName, preprocessed.typeReferences);
-        if (process.env.DTS_DUMP_AST) {
-            console.log(input.fileName);
-            console.log(code);
-            console.log(JSON.stringify(output.ast.body, undefined, 2));
-        }
-        return { code, ast: output.ast };
     }
     return {
         name: "dts",
@@ -1361,43 +1538,49 @@ const plugin = (options = {}) => {
                 // an explicit object, which strips the file extension
                 options.input = {};
                 for (const filename of input) {
-                    const name = path.basename(filename).replace(/((\.d)?\.(t|j)sx?)$/, "");
+                    let name = filename.replace(/((\.d)?\.(t|j)sx?)$/, "");
+                    if (path.isAbsolute(filename)) {
+                        name = path.basename(name);
+                    }
+                    else {
+                        name = path.normalize(name);
+                    }
                     options.input[name] = filename;
                 }
             }
             programs = createPrograms(Object.values(input), compilerOptions);
-            return Object.assign(Object.assign({}, options), { treeshake: {
-                    moduleSideEffects: "no-external",
-                    propertyReadSideEffects: true,
-                    unknownGlobalSideEffects: false,
-                } });
+            return transformPlugin.options.call(this, options);
         },
-        outputOptions(options) {
-            return Object.assign(Object.assign({}, options), { chunkFileNames: options.chunkFileNames || "[name]-[hash]" + dts, entryFileNames: options.entryFileNames || "[name]" + dts, format: "es", exports: "named", compact: false, freeze: true, interop: false, namespaceToStringTag: false, strict: false });
-        },
-        load(id) {
+        outputOptions: transformPlugin.outputOptions,
+        transform(code, id) {
+            const transformFile = (source, id) => {
+                if (typeof source === "object") {
+                    code = source.getFullText();
+                }
+                return transformPlugin.transform.call(this, code, id);
+            };
             if (!tsx.test(id)) {
                 return null;
             }
             if (id.endsWith(dts)) {
                 const { source } = getModule(id);
-                return source ? transformFile(source) : null;
+                return source ? transformFile(source, id) : null;
             }
             // Always try ".d.ts" before ".tsx?"
             const declarationId = id.replace(tsx, dts);
             let module = getModule(declarationId);
             if (module.source) {
-                return transformFile(module.source);
+                return transformFile(module.source, declarationId);
             }
             // Generate in-memory ".d.ts" modules from ".tsx?" modules!
             module = getModule(id);
-            if (!module.source || !module.program) {
+            if (typeof module.source != "object" || !module.program) {
                 return null;
             }
             let generated;
             const { emitSkipped, diagnostics } = module.program.emit(module.source, (_, declarationText) => {
-                const source = ts.createSourceFile(declarationId, declarationText, ts.ScriptTarget.Latest, true);
-                generated = transformFile(source);
+                code = declarationText;
+                generated = transformFile(true, declarationId);
             }, undefined, // cancellationToken
             true);
             if (emitSkipped) {
@@ -1429,26 +1612,8 @@ const plugin = (options = {}) => {
                 return { id: path.resolve(resolvedModule.resolvedFileName) };
             }
         },
-        renderChunk(code, chunk) {
-            const source = ts.createSourceFile(chunk.fileName, code, ts.ScriptTarget.Latest, true);
-            const fixer = new NamespaceFixer(source);
-            const typeReferences = new Set();
-            for (const fileName of Object.keys(chunk.modules)) {
-                for (const ref of allTypeReferences.get(fileName.split("\\").join("/")) || []) {
-                    typeReferences.add(ref);
-                }
-            }
-            code = writeBlock(Array.from(typeReferences, (ref) => `/// <reference types="${ref}" />`));
-            code += fixer.fix();
-            return { code, map: { mappings: "" } };
-        },
+        renderChunk: transformPlugin.renderChunk,
     };
 };
-function writeBlock(codes) {
-    if (codes.length) {
-        return codes.join("\n") + "\n";
-    }
-    return "";
-}
 
-export default plugin;
+export { plugin as default };

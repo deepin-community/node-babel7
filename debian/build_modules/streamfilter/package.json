@@ -1,70 +1,131 @@
 {
-  "_args": [
-    [
-      "streamfilter@1.0.7",
-      "/home/xavier/dev/debian/src/pkg-js/packages/node-babel"
-    ]
-  ],
-  "_development": true,
-  "_from": "streamfilter@1.0.7",
-  "_id": "streamfilter@1.0.7",
-  "_inBundle": false,
-  "_integrity": "sha512-Gk6KZM+yNA1JpW0KzlZIhjo3EaBJDkYfXtYSbOwNIQ7Zd6006E6+sCFlW1NDvFG/vnXhKmw6TJJgiEQg/8lXfQ==",
-  "_location": "/streamfilter",
-  "_phantomChildren": {},
-  "_requested": {
-    "type": "version",
-    "registry": true,
-    "raw": "streamfilter@1.0.7",
-    "name": "streamfilter",
-    "escapedName": "streamfilter",
-    "rawSpec": "1.0.7",
-    "saveSpec": null,
-    "fetchSpec": "1.0.7"
-  },
-  "_requiredBy": [
-    "/gulp-filter"
-  ],
-  "_resolved": "https://registry.npmjs.org/streamfilter/-/streamfilter-1.0.7.tgz",
-  "_spec": "1.0.7",
-  "_where": "/home/xavier/dev/debian/src/pkg-js/packages/node-babel",
-  "author": {
-    "name": "Nicolas Froidure"
-  },
-  "bugs": {
-    "url": "https://github.com/nfroidure/streamfilter/issues"
-  },
-  "dependencies": {
-    "readable-stream": "^2.0.2"
-  },
+  "name": "streamfilter",
+  "version": "3.0.0",
   "description": "Filtering streams.",
-  "devDependencies": {
-    "coveralls": "^2.11.3",
-    "eslint": "^1.0.0",
-    "istanbul": "^0.3.17",
-    "mocha": "^2.2.5",
-    "sf-lint": "^1.0.2",
-    "streamtest": "^1.2.1"
+  "main": "src/index.js",
+  "metapak": {
+    "configs": [
+      "main",
+      "readme",
+      "jsdocs",
+      "eslint",
+      "mocha",
+      "codeclimate",
+      "travis"
+    ],
+    "data": {
+      "files": "src/*.js tests/*.mocha.js",
+      "testsFiles": "tests/*.mocha.js"
+    }
   },
-  "homepage": "https://github.com/nfroidure/streamfilter",
+  "scripts": {
+    "changelog": "conventional-changelog -p angular -i CHANGELOG.md -s",
+    "cli": "env NODE_ENV=${NODE_ENV:-cli}",
+    "cover": "nyc npm test && nyc report --reporter=html --reporter=text",
+    "coveralls": "nyc npm test && nyc report --reporter=text-lcov | coveralls && rm -rf ./coverage",
+    "cz": "env NODE_ENV=${NODE_ENV:-cli} git cz",
+    "doc": "echo \"# API\" > API.md; jsdoc2md src/*.js tests/*.mocha.js >> API.md && git add API.md",
+    "lint": "eslint src/*.js tests/*.mocha.js",
+    "metapak": "metapak",
+    "mocha": "mocha tests/*.mocha.js",
+    "precz": "npm t && npm run lint && npm run doc && npm run metapak -- -s",
+    "prettier": "prettier --write src/*.js tests/*.mocha.js",
+    "preversion": "npm t && npm run lint && npm run doc && npm run metapak -- -s",
+    "test": "npm run mocha",
+    "version": "npm run changelog && git add CHANGELOG.md"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git@github.com:nfroidure/streamfilter.git"
+  },
   "keywords": [
     "assert",
     "deepEqual",
     "neat"
   ],
+  "author": {
+    "name": "Nicolas Froidure",
+    "email": "nicolas.froidure@insertafter.com",
+    "url": "http://insertafter.com/en/index.html"
+  },
   "license": "MIT",
-  "main": "src/index.js",
-  "name": "streamfilter",
-  "repository": {
-    "type": "git",
-    "url": "git+ssh://git@github.com/nfroidure/streamfilter.git"
+  "bugs": {
+    "url": "https://github.com/nfroidure/streamfilter/issues"
   },
-  "scripts": {
-    "cli": "env NPM_RUN_CLI=1",
-    "cover": "./node_modules/istanbul/lib/cli.js cover ./node_modules/mocha/bin/_mocha --report html -- tests/*.mocha.js -R spec -t 5000",
-    "coveralls": "./node_modules/istanbul/lib/cli.js cover ./node_modules/mocha/bin/_mocha --report lcovonly -- tests/*.mocha.js -R spec -t 5000 && cat ./coverage/lcov.info | coveralls && rm -rf ./coverage",
-    "lint": "eslint **/*.s",
-    "test": "mocha tests/*.mocha.js"
+  "homepage": "https://github.com/nfroidure/streamfilter",
+  "devDependencies": {
+    "commitizen": "^3.0.4",
+    "conventional-changelog-cli": "^2.0.11",
+    "coveralls": "^3.0.2",
+    "cz-conventional-changelog": "^2.1.0",
+    "eslint": "^5.8.0",
+    "eslint-plugin-prettier": "^3.0.0",
+    "jsdoc-to-markdown": "^4.0.1",
+    "metapak": "^2.0.0",
+    "metapak-nfroidure": "^9.0.2",
+    "mocha": "^5.2.0",
+    "nyc": "^13.0.1",
+    "prettier": "^1.14.3",
+    "streamtest": "^1.2.4"
   },
-  "version": "1.0.7"
+  "dependencies": {
+    "readable-stream": "^3.0.6"
+  },
+  "engines": {
+    "node": ">=8.12.0"
+  },
+  "config": {
+    "commitizen": {
+      "path": "./node_modules/cz-conventional-changelog"
+    }
+  },
+  "contributors": [],
+  "files": [
+    "src/**/*.js",
+    "LICENSE",
+    "README.md",
+    "CHANGELOG.md"
+  ],
+  "eslintConfig": {
+    "extends": [
+      "eslint:recommended"
+    ],
+    "parserOptions": {
+      "sourceType": "script",
+      "modules": true
+    },
+    "env": {
+      "es6": true,
+      "node": true,
+      "jest": true,
+      "mocha": true
+    },
+    "plugins": [
+      "prettier"
+    ],
+    "rules": {
+      "prettier/prettier": "error"
+    }
+  },
+  "prettier": {
+    "semi": true,
+    "printWidth": 80,
+    "singleQuote": true,
+    "trailingComma": "es5",
+    "proseWrap": "always"
+  },
+  "greenkeeper": {
+    "ignore": [
+      "commitizen",
+      "cz-conventional-changelog",
+      "conventional-changelog-cli",
+      "jsdoc-to-markdown",
+      "eslint",
+      "eslint-config-prettier",
+      "prettier",
+      "mocha",
+      "coveralls",
+      "nyc"
+    ]
+  }
 }

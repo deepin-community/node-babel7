@@ -2,30 +2,34 @@ Source: node-babel7
 Maintainer: Debian Javascript Maintainers <pkg-javascript-devel@lists.alioth.debian.org>
 Uploaders: Pirate Praveen <praveen@debian.org>
 Section: javascript
-#Testsuite: autopkgtest-pkg-nodejs
 Priority: optional
 Build-Depends: debhelper-compat (= 13)
- , dh-sequence-nodejs (>= 0.9.78~)
+ , dh-sequence-nodejs (>= 0.15.5~)
+ , eslint
+ , git <pkg.node-babel7.yarnpkg>
  , gulp (>= 4)
  , help2man
- , jq
- , node-babel7 (>= 7.9.6) <!pkg.node-babel7.npm>
- , node-browserslist (>= 4.16~)
- , node-chalk (>= 4~)
+ , node-ampproject-remapping
+ , node-array-each
+ , node-babel7
+ , node-babel7 (>= 7.18~) <!pkg.node-babel7.yarnpkg>
+ , node-babel-helper-define-polyfill-provider
+ , node-babel-plugin-polyfill-corejs2
+ , node-babel-plugin-polyfill-corejs3
+ , node-babel-plugin-polyfill-regenerator
+ , node-builtins
  , node-cheerio
  , node-clean-css
- , node-commander (>= 4.1.1)
- , node-core-js (>= 3.1.1~)
  , node-css-select
  , node-css-selector-tokenizer
  , node-debbundle-acorn
- , node-debug
- , node-globals
+ , node-deepmerge
+ , node-eslint-plugin-eslint-plugin
  , node-gulp-babel (>= 8.0~)
+ , node-gulp-cli (>= 2.3.0~)
  , node-gulp-newer
  , node-gulp-plumber
  , node-gulp-rename
- , node-gulp-util
  , node-he
  , node-htmlparser2
  , node-invariant
@@ -33,54 +37,63 @@ Build-Depends: debhelper-compat (= 13)
  , node-jest-worker
  , node-jsdom
  , node-leven (>= 3.1.0+~cs1.1.1)
+ , node-lru-cache
  , node-liftoff (>= 3.1.0-4~)
  , node-lodash (>= 4.17.19+dfsg1~)
+ , node-lodash-packages
  , node-make-error
  , node-merge-stream
  , node-multimatch
  , node-output-file-sync
  , node-recast
- , node-regenerator-transform (>= 0.14~)
  , node-rimraf
- , node-rollup-plugin-babel (>= 5.2.0)
+ , node-rollup-plugin-babel (>= 5.3.1)
  , node-rollup-plugin-commonjs (>= 13.0.0)
  , node-rollup-plugin-inject
  , node-rollup-plugin-json (>= 4.1.0)
  , node-rollup-plugin-node-resolve (>= 9.0.0)
- , node-rollup-plugin-node-polyfills
+ , node-rollup-plugin-polyfill-node
  , node-rollup-plugin-replace (>= 2.3.3)
  , node-rollup-plugin-terser
- , node-semver (>= 7.0~)
  , node-serialize-javascript
-# for embedded debian/build_modules/@rollup/plugin-node-resolve
- , node-deepmerge
-# for debian/build_modules/webpack-stream
  , node-supports-color (>= 5.3~)
  , node-through
  , node-through2
- , node-to-fast-properties
  , node-typescript
+ , node-types-fs-readdir-recursive
+ , node-types-jest
+ , node-types-v8flags
  , node-vinyl-fs (>= 2.4.4-2~)
- , yarnpkg <pkg.node-babel7.yarnpkg>
- , git <pkg.node-babel7.yarnpkg>
- , rollup (>= 2.0~)
- , uglifyjs
+ , rollup (>= 2.61.1-4~)
+ , terser (>= 5)
  , webpack
-Standards-Version: 4.6.0
+ , npm <pkg.node-babel7.yarnpkg>
+ , yarnpkg <pkg.node-babel7.yarnpkg>
+ , dh-nodejs
+Standards-Version: 4.6.2
 Vcs-Browser: https://salsa.debian.org/js-team/node-babel
 Vcs-Git: https://salsa.debian.org/js-team/node-babel.git
+Testsuite: autopkgtest-pkg-nodejs
 Homepage: https://babeljs.io/
 Rules-Requires-Root: no
 
 Package: node-babel7
 Architecture: all
 Depends: ${misc:Depends}
+ , node-ampproject-remapping
+ , node-babel-plugin-add-module-exports
  , node-babel7-runtime (= ${binary:Version})
+ , node-babel-plugin-polyfill-corejs2
+ , node-babel-plugin-polyfill-corejs3
+ , node-babel-plugin-polyfill-regenerator
  , node-browserslist (>= 4.16~)
  , node-chalk (>= 4~)
+ , node-clone-deep
  , node-commander (>= 4.1.1)
  , node-convert-source-map
  , node-core-js (>= 3.1.1~)
+ , node-core-js-compat
+ , node-core-js-pure
  , node-debug
  , node-esutils
  , node-find-cache-dir
@@ -91,10 +104,11 @@ Depends: ${misc:Depends}
  , node-jsesc
  , node-json5
  , node-lodash (>= 4.17.19+dfsg1~)
+ , node-lodash-packages
  , node-make-dir
  , node-quick-lru
  , node-regenerator-transform (>= 0.14~)
- , node-regexpu-core
+ , node-regexpu-core (>= 5.2.1~)
  , node-resolve
  , node-semver (>= 7.0~)
  , node-slash
@@ -102,10 +116,100 @@ Depends: ${misc:Depends}
  , node-source-map-support
  , node-to-fast-properties
  , node-v8flags
- , nodejs
+ , nodejs:any
+Suggests: node-babel-plugin-polyfill-es-shims
+ , node-babel7-debug
 Breaks: node-babel-core (<< 6.26.0+repack-3~)
-Provides: ${babel:Provides}, babeljs (= ${binary:Version})
-Description: Babel command line
+ , node-babel-cli (<< 7)
+ , node-babel-code-frame (<< 7)
+ , node-babel-generator (<< 7)
+ , node-babel-helper-bindify-decorators (<< 7)
+ , node-babel-helper-builder-binary-assignment-operator-visitor (<< 7)
+ , node-babel-helper-builder-react-jsx (<< 7)
+ , node-babel-helper-call-delegate (<< 7)
+ , node-babel-helper-explode-assignable-expression (<< 7)
+ , node-babel-helper-explode-class (<< 7)
+ , node-babel-helper-function-name (<< 7)
+ , node-babel-helper-hoist-variables (<< 7)
+ , node-babel-helper-optimise-call-expression (<< 7)
+ , node-babel-helper-remap-async-to-generator (<< 7)
+ , node-babel-helper-replace-supers (<< 7)
+ , node-babel-helpers (<< 7)
+ , node-babel-plugin-external-helpers (<< 7)
+ , node-babel-plugin-syntax-async-generators (<< 7)
+ , node-babel-plugin-syntax-class-properties (<< 7)
+ , node-babel-plugin-syntax-decorators (<< 7)
+ , node-babel-plugin-syntax-do-expressions (<< 7)
+ , node-babel-plugin-syntax-dynamic-import (<< 7)
+ , node-babel-plugin-syntax-flow (<< 7)
+ , node-babel-plugin-syntax-function-bind (<< 7)
+ , node-babel-plugin-syntax-jsx (<< 7)
+ , node-babel-plugin-syntax-object-rest-spread (<< 7)
+ , node-babel-plugin-transform-async-to-generator (<< 7)
+ , node-babel-plugin-transform-exponentiation-operator (<< 7)
+ , node-babel-plugin-transform-flow-strip-types (<< 7)
+ , node-babel-plugin-transform-jscript (<< 7)
+ , node-babel-plugin-transform-proto-to-assign (<< 7)
+ , node-babel-plugin-transform-react-display-name (<< 7)
+ , node-babel-plugin-transform-react-jsx (<< 7)
+ , node-babel-plugin-transform-react-jsx-self (<< 7)
+ , node-babel-plugin-transform-react-jsx-source (<< 7)
+ , node-babel-plugin-transform-regenerator (<< 7)
+ , node-babel-plugin-transform-runtime (<< 7)
+ , node-babel-plugin-transform-strict-mode (<< 7)
+ , node-babel-preset-env (<< 7)
+ , node-babel-preset-flow (<< 7)
+ , node-babel-preset-react (<< 7)
+ , node-babel-register (<< 7)
+ , node-babel-template (<< 7)
+ , node-babel-traverse (<< 7)
+Replaces: node-babel-cli (<< 7)
+ , node-babel-code-frame (<< 7)
+ , node-babel-generator (<< 7)
+ , node-babel-helper-bindify-decorators (<< 7)
+ , node-babel-helper-builder-binary-assignment-operator-visitor (<< 7)
+ , node-babel-helper-builder-react-jsx (<< 7)
+ , node-babel-helper-call-delegate (<< 7)
+ , node-babel-helper-explode-assignable-expression (<< 7)
+ , node-babel-helper-explode-class (<< 7)
+ , node-babel-helper-function-name (<< 7)
+ , node-babel-helper-hoist-variables (<< 7)
+ , node-babel-helper-optimise-call-expression (<< 7)
+ , node-babel-helper-remap-async-to-generator (<< 7)
+ , node-babel-helper-replace-supers (<< 7)
+ , node-babel-helpers (<< 7)
+ , node-babel-plugin-external-helpers (<< 7)
+ , node-babel-plugin-syntax-async-generators (<< 7)
+ , node-babel-plugin-syntax-class-properties (<< 7)
+ , node-babel-plugin-syntax-decorators (<< 7)
+ , node-babel-plugin-syntax-do-expressions (<< 7)
+ , node-babel-plugin-syntax-dynamic-import (<< 7)
+ , node-babel-plugin-syntax-flow (<< 7)
+ , node-babel-plugin-syntax-function-bind (<< 7)
+ , node-babel-plugin-syntax-jsx (<< 7)
+ , node-babel-plugin-syntax-object-rest-spread (<< 7)
+ , node-babel-plugin-transform-async-to-generator (<< 7)
+ , node-babel-plugin-transform-exponentiation-operator (<< 7)
+ , node-babel-plugin-transform-flow-strip-types (<< 7)
+ , node-babel-plugin-transform-jscript (<< 7)
+ , node-babel-plugin-transform-proto-to-assign (<< 7)
+ , node-babel-plugin-transform-react-display-name (<< 7)
+ , node-babel-plugin-transform-react-jsx (<< 7)
+ , node-babel-plugin-transform-react-jsx-self (<< 7)
+ , node-babel-plugin-transform-react-jsx-source (<< 7)
+ , node-babel-plugin-transform-regenerator (<< 7)
+ , node-babel-plugin-transform-runtime (<< 7)
+ , node-babel-plugin-transform-strict-mode (<< 7)
+ , node-babel-preset-env (<< 7)
+ , node-babel-preset-flow (<< 7)
+ , node-babel-preset-react (<< 7)
+ , node-babel-register (<< 7)
+ , node-babel-template (<< 7)
+ , node-babel-traverse (<< 7)
+Provides: ${nodeBabel7:Provides}
+ , babeljs (= ${binary:Version})
+X-Javascript-Built-Using: ${nodejs:BuiltUsing}
+Description: Babel compiler for writing next generation JavaScript
  Babel is a JavaScript compiler to use next generation JavaScript, today.
  .
  ES2015 and beyond: Babel has support for the latest version of JavaScript
@@ -114,20 +218,21 @@ Description: Babel command line
 
 Package: node-babel7-runtime
 Architecture: all
+Multi-Arch: foreign
 Depends: ${misc:Depends}
  , node-regenerator-runtime
-Provides: ${babel:depsProvides}
-Breaks: node-babel7 (<< 7.12.12~)
+Provides: ${nodeBabel7Runtime:Provides}
+X-Javascript-Built-Using: ${nodejs:BuiltUsing}
 Description: Babel modular runtime helpers
  @babel/runtime is meant to be used as a runtime dependency along with the
  Babel plugin @babel/plugin-transform-runtime.
 
 Package: node-babel7-standalone
 Architecture: all
-Depends: ${misc:Depends}
-Provides: ${babel:depsProvides}
-Breaks: node-babel7 (<< 7.12.12~)
 Multi-Arch: foreign
+Depends: ${misc:Depends}
+Provides: ${nodeBabel7Standalone:Provides}
+X-Javascript-Built-Using: ${nodejs:BuiltUsing}
 Description: Standalone build of Babel for use in browsers and other non-Node.js environments
  @babel/standalone provides a standalone build of Babel for use in browsers
  and other non-Node.js environments.If you're using Babel in production, you
@@ -147,3 +252,13 @@ Description: Standalone build of Babel for use in browsers and other non-Node.js
     app itself, including all the goodies that ES2015 provides.
   * Other non-Node.js environments (ReactJS.NET, ruby-babel-transpiler,
     php-babel-transpiler, etc).
+
+Package: node-babel7-debug
+Architecture: all
+Depends: ${misc:Depends}
+Breaks: node-babel7 (<< 7.19.3+ds1+~cs214.250.186-2)
+ , node-babel7-runtime (<< 7.19.3+ds1+~cs214.250.186-2)
+ , node-babel7-standalone (<< 7.19.3+ds1+~cs214.250.186-2)
+Multi-Arch: foreign
+Description: Source-map files for node-babel7 packages
+ Source map files for node-babel7, node-babel7-runtime and node-babel7-standalone

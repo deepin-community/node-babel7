@@ -9,72 +9,113 @@ include /usr/share/dpkg/pkg-info.mk
 GULP=/usr/bin/gulp
 BABELJSDESC="The compiler for writing next generation JavaScript"
 BABELJSNODEDESC="CLI that works exactly the same as the Node.js CLI, with the added benefit of compiling with Babel presets and plugins before running it"
-EXTMODULES=$(shell perl -lne 'print $$1 if/component=([^,]*)/' debian/watch)
+BABEL=/usr/bin/babeljs
+OTHER_BABEL_COMPONENTS_TO_BUILD=babel-check-duplicated-nodes babel-plugin-dynamic-import-node babel-preset-modules babel-plugin-transform-replace-object-assign pirates
+OTHER_BABEL_MODULES_TO_BUILD:=$(shell for m in $(OTHER_BABEL_COMPONENTS_TO_BUILD); do pkgjs-pjson $$m;done)
 
 %:
 	dh $@
 
+override_dh_auto_configure:
+ifeq (,$(filter pkg.node-babel7.yarnpkg,$(DEB_BUILD_OPTIONS) $(DEB_BUILD_PROFILES)))
+	# Don't link internal modules
+	pkgjs-install-minimal
+	rm -rf node_modules/@jridgewell
+	pkgjs-utils link_external_modules
+	pkgjs-utils link_build_modules
+else
+	# No link when built with yarnpkg
+endif
+
 override_dh_auto_build:
 ifeq (,$(filter pkg.node-babel7.yarnpkg,$(DEB_BUILD_OPTIONS) $(DEB_BUILD_PROFILES)))
-	#rm -f node_modules/@babel/code-frame
-	#rm -f node_modules/@babel/preset-modules
-	mv node_modules/@babel node_modules/.babel
-	mkdir node_modules/@babel
-	ln -s /usr/share/nodejs/@babel/runtime node_modules/@babel/
-	ln -s /usr/share/nodejs/@babel/compat-data node_modules/@babel/
-	# Build @babel/plugin-dynamic-import-node
-	cd babel-plugin-dynamic-import-node && babeljs-7 src --out-dir lib
-	# Build @babel/preset-modules
-	cd babel-preset-modules && babeljs src --presets '@babel/preset-env' -d lib --ignore '**/*.test.js'
-	# Build charcodes
+	@echo
+	@echo "Step 0: other builds"
+	pkgjs-utils clean_internal_modules
+	mv node_modules node_modules.save
+	debian/rules other-babel-modules
+	mv node_modules.save node_modules
+
+	@echo
+	@echo "Step 1: Link /usr/share/nodejs/@babel/* build dependencies into node_modules"
+	LIST=`pkgjs-utils modules_list` && \
+		for m in $$LIST `pkgjs-utils main`; do \
+			if [ -e /usr/share/nodejs/$$m ]; then \
+				rm -f node_modules/$$m; \
+				ln -vs /usr/share/nodejs/$$m node_modules/$$m || true; \
+			fi; \
+		done
+	ln -s ../../packages/babel-helper-string-parser node_modules/@babel/helper-string-parser || true
+	@echo
+	@echo "Step 2: build charcodes"
 	cd charcodes; \
 	for D in ./packages/*; do \
 		mkdir "$$D/lib"; \
-		babeljs-7 "$$D/src/index.js" -o "$$D/lib/index.js" --env-name "cjs"; \
-		babeljs-7 "$$D/src/index.js" -o "$$D/lib/index.mjs" --env-name "esm"; \
+		$(BABEL) "$$D/src/index.js" -o "$$D/lib/index.js" --env-name "cjs"; \
+		$(BABEL) "$$D/src/index.js" -o "$$D/lib/index.mjs" --env-name "esm"; \
 	done
-	# Build babel except standalone
-	set -e; for i in $(EXTMODULES); do \
-		NAME=`jq -r .name $$i/package.json`; \
-		if test "$$NAME" != "null"; then \
-			rm -rf node_modules/$$NAME; \
-			mv $$i node_modules/$$NAME; \
-			echo mv node_modules/$$NAME $$i >> debian/restore.sh; \
-		fi; \
-	done
-	if [ -e charcodes ]; then \
-		mv charcodes node_modules/.charcodes; \
-		for i in `ls node_modules/.charcodes/packages/`; do \
-			ln -vs .charcodes/packages/$$i node_modules/$$i; \
-		done; \
-		echo mv node_modules/.charcodes charcodes >> debian/restore.sh; \
-	fi
-	make build YARN=''
-	#mv node_modules/.babel/* node_modules/@babel/
-	for i in `ls packages/`; do \
-		NAME=`jq -r .name packages/$$i/package.json`; \
-		if [ -e node_modules/$$NAME ]; then \
-			echo -n ''; \
-		else \
-			ln -s ../../packages/$$i node_modules/$$NAME; \
-		fi; \
-	done
-	make tscheck YARN=''
+
+	@echo
+	@echo "Step 3: build babel"
+
+	#$(MAKE) prepublish-build  YARN=''
+	#$(MAKE) prepublish-build-standalone YARN=''
+	#gulp build-babel-standalone
+	gulp generate-standalone
+	#NODE_ENV=production BABEL_ENV=production STRIP_BABEL_8_FLAG=true $(MAKE) build-bundle
+	node scripts/set-module-type.js
+	NODE_ENV=production BABEL_ENV=production STRIP_BABEL_8_FLAG=true gulp build
+	node packages/babel-types/scripts/generators/flow.js > packages/babel-types/lib/index.js.flow
+	cd packages/babel-plugin-transform-runtime && node scripts/build-dist.js
+	STRIP_BABEL_8_FLAG=true BABEL_ENV=production IS_PUBLISH=true gulp build-babel-standalone
+	node scripts/generators/tsconfig.js
+	node scripts/generators/archived-libs-typings.js
+
+	@echo
+	@echo "Step 4: build typescript declarations"
+
+	# Workaround: babel wants tsc < 4.5
+	perl -i -pe '$$_ = "// \@ts-ignore\n$$_"' \
+		packages/babel-traverse/src/path/generated/asserts.d.ts \
+		packages/babel-traverse/src/path/generated/validators.d.ts
+
+	# Now use internal babel modules
+	rm -rf dts
+	LIST=`pkgjs-utils modules_list;pkgjs-utils main` && (cd node_modules && rm -rf $$LIST)
+	pkgjs-utils link_internal_modules
+	#for i in babel-*/ gensync packages/b*; do \
+	#	NAME=`pkgjs-pjson $$i name`; \
+	#	rm -rf node_modules/$$NAME; \
+	#	cp -a $$i node_modules/$$NAME; \
+	#done
+	tsc -b .
 	gulp bundle-dts
-	make build-typescript-legacy-typings
-	sh -e debian/restore.sh
-	rm -f debian/restore.sh
-	# Build pirates
-	mv node_modules tmp_modules
-	cd pirates && sh -ex ../debian/nodejs/pirates/build
-	mv tmp_modules node_modules
+	node packages/babel-types/scripts/generators/typescript-legacy.js > packages/babel-types/lib/index-legacy.d.ts
+
+	@echo
+	@echo "Step 5: build @babel/standalone"
+
+	#patch -p1 <debian/patches/ignore-rollup-warnings-for-standalone.patch
+	gulp rollup-babel-standalone
+	cd packages/babel-standalone && \
+	terser -o babel.min.js babel.js
+	#patch -R -p1 <debian/patches/ignore-rollup-warnings-for-standalone.patch
 else
 	rm -rf node_modules
-	HOME=`pwd` yarnpkg install
-	make build build-dist
-	cd babel-plugin-dynamic-import-node && HOME=`pwd` yarnpkg install && yarnpkg build
-	cd charcodes && HOME=`pwd` yarnpkg install && ./scripts/build.sh
-	cd pirates && HOME=`pwd` yarnpkg install && yarnpkg build
+	HOME=/build YARN_ENABLE_SCRIPTS=0 yarnpkg install
+	HOME=/build yarnpkg add $(OTHER_BABEL_MODULES_TO_BUILD)
+	#HOME=/build npm i --ignore-scripts
+	#cd node_modules/@rollup/plugin-commonjs && patch -p1 <../../../.yarn/patches/@rollup__plugin-commonjs.patch
+	pkgjs-utils link_internal_modules 2>/dev/null
+	for m in `pkgjs-utils modules_list`; do \
+		if test -e /usr/share/nodejs/$$m -a -L node_modules/$$m; then \
+			rm -f node_modules/$$m; \
+			ln -vs /usr/share/nodejs/$$m node_modules/$$m; \
+		fi; \
+	done
+	HOME=/build $(MAKE) build
+	NODE_PATH=../node_modules debian/rules other-babel-modules BABEL=../node_modules/.bin/babel
+	cd charcodes && HOME=/build npm install --ignore-scripts && ./scripts/build.sh
 endif
 	help2man --no-info \
 		--version-string $(DEB_VERSION_UPSTREAM) \
@@ -84,6 +125,16 @@ endif
 		--version-string $(DEB_VERSION_UPSTREAM) \
 		-n $(BABELJSNODEDESC) \
 		packages/babel-node/bin/babel-node.js > babeljs-node.1
+
+other-babel-modules:
+	set -e; for m  in $(OTHER_BABEL_COMPONENTS_TO_BUILD); do \
+			(echo "Building $$m"; \
+				cd $$m; \
+				rm -rf lib; \
+				$(BABEL) --out-dir lib src --ignore '**/*.test.js'; \
+			); \
+			ls $$m/lib/*.js; \
+		done
 
 ifeq (,$(filter nocheck,$(DEB_BUILD_OPTIONS) $(DEB_BUILD_PROFILES)))
 override_dh_auto_test:
@@ -95,26 +146,17 @@ override_dh_install:
 	find debian -name .gitignore -delete
 	find debian -name tsconfig.tsbuildinfo -delete
 	cd debian/node-babel7 && rm -rf `cat ../../debian/node-babel7-*.install|sed 's/.* //g'`
+	perl -i -pe 's#(?:\.\./)+usr/#/usr/#' `find debian/*/usr/share/nodejs -name '*.map'`
+	# Move source-map files into node-babel7-debug
+	dh_nodejs_build_debug_package node-babel7-debug
 
-override_dh_gencontrol:
-	BABELPROVIDES=`grep -sh 'nodejs:Provides' debian/*.substvars|head -n1|sed -e 's/nodejs:Provides=//'`; \
-	set -e; \
-	for m in `cd debian && ls node-babel7-*.install`; do \
-		bundle=''; \
-		mod=$${m%.install}; \
-		for p in `cat debian/$$mod.install`; do \
-			pversion=`jq -r .version debian/$$mod/$$p/package.json` ; \
-			pname=`jq -r .name debian/$$mod/$$p/package.json` ; \
-			pname=node-`echo $$pname|sed -e 's/^.types./types-/' -e 's/.babel\//babel-/' -e 's/__/-/g'`; \
-			echo "Found $$pname ($$pversion) in $$mod"; \
-			bundle="$$pname (=$$pversion-1), $$bundle"; \
-			BABELPROVIDES=`echo $$BABELPROVIDES|sed -e "s/ *$$pname [^,]*,//g"`; \
-		done; \
-		echo dh_gencontrol -p$$mod -- -Vbabel:depsProvides="$$bundle"; \
-		dh_gencontrol -p$$mod -- -Vbabel:depsProvides="$$bundle"; \
-	done; \
-	echo "babel7 Provides value: $$BABELPROVIDES"; \
-	dh_gencontrol -pnode-babel7 -- -Vbabel:Provides="$$BABELPROVIDES"
+override_dh_installdocs:
+	dh_installdocs
+	# Auto-generate components docs
+	dh_nodejs_autodocs auto_dispatch
+	mv debian/node-babel7-debug/usr/share/doc/node-babel7-debug debian/node-babel7-debug/usr/share/
+	rm -rf debian/node-babel7-debug/usr/share/doc/*
+	mv debian/node-babel7-debug/usr/share/node-babel7-debug debian/node-babel7-debug/usr/share/doc/
 
 override_dh_fixperms:
 	dh_fixperms

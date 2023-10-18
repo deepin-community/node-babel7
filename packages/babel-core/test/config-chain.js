@@ -1,37 +1,21 @@
-import cp from "child_process";
 import fs from "fs";
 import os from "os";
 import path from "path";
-import util from "util";
-import escapeRegExp from "lodash/escapeRegExp";
-import * as babel from "../lib";
+import { fileURLToPath } from "url";
+import * as babel from "../lib/index.js";
+import rimraf from "rimraf";
 
-// "minNodeVersion": "10.0.0" <-- For Ctrl+F when dropping node 10
-const supportsESM = parseInt(process.versions.node) >= 12;
+import _getTargets from "@babel/helper-compilation-targets";
+const getTargets = _getTargets.default || _getTargets;
 
-const isMJS = file => path.extname(file) === ".mjs";
+const dirname = path.dirname(fileURLToPath(import.meta.url));
 
-const skipUnsupportedESM = (esm, name) => {
-  if (esm && !supportsESM) {
-    console.warn(
-      `Skipping "${name}" because native ECMAScript modules are not supported.`,
-    );
-    return true;
-  }
-  // This can be removed when loadOptionsAsyncInSpawedProcess is removed.
-  if (esm && process.platform === "win32") {
-    console.warn(
-      `Skipping "${name}" because the ESM runner cannot be spawned on Windows.`,
-    );
-    return true;
-  }
-  return false;
-};
+import { isMJS, loadOptionsAsync, skipUnsupportedESM } from "./helpers/esm.js";
 
 // TODO: In Babel 8, we can directly uses fs.promises which is supported by
 // node 8+
 const pfs =
-  fs.promises ??
+  fs.promises ||
   new Proxy(fs, {
     get(target, name) {
       if (name === "copyFile") {
@@ -64,47 +48,11 @@ const pfs =
   });
 
 function fixture(...args) {
-  return path.join(__dirname, "fixtures", "config", ...args);
+  return path.join(dirname, "fixtures", "config", ...args);
 }
 
 function loadOptions(opts) {
-  return babel.loadOptions({ cwd: __dirname, ...opts });
-}
-
-function loadOptionsAsync({ filename, cwd = __dirname }, mjs) {
-  if (mjs) {
-    // import() crashes with jest
-    return loadOptionsAsyncInSpawedProcess({ filename, cwd });
-  }
-
-  return babel.loadOptionsAsync({ filename, cwd });
-}
-
-// !!!! hack is coming !!!!
-// Remove this function when https://github.com/nodejs/node/issues/35889 is resolved.
-// Jest supports dynamic import(), but Node.js segfaults when using it in our tests.
-async function loadOptionsAsyncInSpawedProcess({ filename, cwd }) {
-  const { stdout, stderr } = await util.promisify(cp.execFile)(
-    require.resolve("./fixtures/babel-load-options-async.mjs"),
-    // pass `cwd` as params as `process.cwd()` will normalize `cwd` on macOS
-    [filename, cwd],
-    {
-      cwd,
-      env: process.env,
-    },
-  );
-
-  const EXPERIMENTAL_WARNING = /\(node:\d+\) ExperimentalWarning: The ESM module loader is experimental\./;
-
-  if (stderr.replace(EXPERIMENTAL_WARNING, "").trim()) {
-    throw new Error(
-      "error is thrown in babel-load-options-async.mjs: stdout\n" +
-        stdout +
-        "\nstderr:\n" +
-        stderr,
-    );
-  }
-  return JSON.parse(stdout);
+  return babel.loadOptions({ cwd: dirname, ...opts });
 }
 
 function pairs(items) {
@@ -117,13 +65,27 @@ function pairs(items) {
   return pairs;
 }
 
+function escapeRegExp(string) {
+  return string.replace(/[|\\{}()[\]^$+*?.]/g, "\\$&");
+}
+
+const tempDirs = [];
+
 async function getTemp(name) {
-  const cwd = await pfs.mkdtemp(os.tmpdir() + path.sep + name);
+  const tempDir = os.tmpdir() + path.sep + name;
+  tempDirs.push(tempDir);
+  const cwd = await pfs.mkdtemp(tempDir);
   const tmp = name => path.join(cwd, name);
   const config = name =>
     pfs.copyFile(fixture("config-files-templates", name), tmp(name));
   return { cwd, tmp, config };
 }
+
+afterAll(() => {
+  for (const dir of tempDirs) {
+    rimraf.sync(dir);
+  }
+});
 
 describe("buildConfigChain", function () {
   describe("test", () => {
@@ -272,6 +234,96 @@ describe("buildConfigChain", function () {
         });
 
         expect(opts.comments).toBeUndefined();
+      });
+    });
+
+    describe("filename requirement", () => {
+      const BASE_OPTS = {
+        cwd: fixture("nonexistant-fake"),
+        babelrc: false,
+        configFile: false,
+      };
+
+      describe("in config", () => {
+        it("requires filename if string", () => {
+          expect(() =>
+            loadOptions({
+              ...BASE_OPTS,
+              test: fixture("nonexistant-fake"),
+            }),
+          ).toThrow(/no filename was passed/);
+        });
+
+        it("requires filename if RegExp", () => {
+          expect(() =>
+            loadOptions({
+              ...BASE_OPTS,
+              test: /file/,
+            }),
+          ).toThrow(/no filename was passed/);
+        });
+
+        it("does not require filename if function", () => {
+          const mock = jest.fn().mockReturnValue(true);
+
+          expect(() =>
+            loadOptions({
+              ...BASE_OPTS,
+              test: mock,
+            }),
+          ).not.toThrow();
+          expect(mock).toHaveBeenCalledWith(undefined, expect.anything());
+
+          expect(() =>
+            loadOptions({
+              ...BASE_OPTS,
+              filename: "some-filename",
+              test: mock,
+            }),
+          ).not.toThrow();
+          expect(mock.mock.calls[1][0].endsWith("some-filename")).toBe(true);
+        });
+      });
+
+      describe("in preset", () => {
+        it("requires filename if string", () => {
+          expect(() =>
+            loadOptions({
+              ...BASE_OPTS,
+              presets: [() => ({ test: fixture("nonexistant-fake") })],
+            }),
+          ).toThrow(/requires a filename/);
+        });
+
+        it("requires filename if RegExp", () => {
+          expect(() =>
+            loadOptions({
+              ...BASE_OPTS,
+              presets: [() => ({ test: /file/ })],
+            }),
+          ).toThrow(/requires a filename/);
+        });
+
+        it("does not require filename if function", () => {
+          const mock = jest.fn().mockReturnValue(true);
+
+          expect(() =>
+            loadOptions({
+              ...BASE_OPTS,
+              presets: [() => ({ test: mock })],
+            }),
+          ).not.toThrow();
+          expect(mock).toHaveBeenCalledWith(undefined, expect.anything());
+
+          expect(() =>
+            loadOptions({
+              ...BASE_OPTS,
+              filename: "some-filename",
+              presets: [() => ({ test: mock })],
+            }),
+          ).not.toThrow();
+          expect(mock.mock.calls[1][0].endsWith("some-filename")).toBe(true);
+        });
       });
     });
   });
@@ -1031,16 +1083,21 @@ describe("buildConfigChain", function () {
   });
 
   describe("config files", () => {
+    const defaultTargets = getTargets();
     const getDefaults = () => ({
       babelrc: false,
       configFile: false,
+      browserslistConfigFile: false,
       cwd: process.cwd(),
       root: process.cwd(),
+      rootMode: "root",
       envName: "development",
       passPerPreset: false,
       plugins: [],
       presets: [],
       cloneInputAst: true,
+      targets: defaultTargets,
+      assumptions: {},
     });
     const realEnv = process.env.NODE_ENV;
     const realBabelEnv = process.env.BABEL_ENV;
@@ -1097,7 +1154,7 @@ describe("buildConfigChain", function () {
         "babel.config.mjs",
       ])("should load %s asynchronously", async name => {
         const esm = isMJS(name);
-        if (skipUnsupportedESM(esm, `should load ${name} asynchronously`)) {
+        if (esm && skipUnsupportedESM(`should load ${name} asynchronously`)) {
           return;
         }
 
@@ -1129,8 +1186,8 @@ describe("buildConfigChain", function () {
       )("should throw if both %s and %s are used", async (name1, name2) => {
         const esm = isMJS(name1) || isMJS(name2);
         if (
+          esm &&
           skipUnsupportedESM(
-            esm,
             `should throw if both ${name1} and ${name2} are used`,
           )
         ) {
@@ -1196,7 +1253,7 @@ describe("buildConfigChain", function () {
         ].filter(Boolean),
       )("should load %s asynchronously", async name => {
         const esm = isMJS(name);
-        if (skipUnsupportedESM(esm, `should load ${name} asynchronously`)) {
+        if (esm && skipUnsupportedESM(`should load ${name} asynchronously`)) {
           return;
         }
 
@@ -1238,8 +1295,8 @@ describe("buildConfigChain", function () {
       )("should throw if both %s and %s are used", async (name1, name2) => {
         const esm = isMJS(name1) || isMJS(name2);
         if (
+          esm &&
           skipUnsupportedESM(
-            esm,
             `should throw if both ${name1} and ${name2} are used`,
           )
         ) {
@@ -1282,7 +1339,8 @@ describe("buildConfigChain", function () {
         async ({ config, dir, error }) => {
           const esm = isMJS(config);
           if (
-            skipUnsupportedESM(esm, `should show helpful errors for ${config}`)
+            esm &&
+            skipUnsupportedESM(`should show helpful errors for ${config}`)
           ) {
             return;
           }
@@ -1375,7 +1433,7 @@ describe("buildConfigChain", function () {
     it("should throw when `preset` requires `filename` but it was not passed", () => {
       expect(() => {
         loadOptions({
-          presets: [require("./fixtures/config-loading/preset4")],
+          presets: ["./fixtures/config-loading/preset4"],
         });
       }).toThrow(/Preset \/\* your preset \*\/ requires a filename/);
     });
@@ -1383,9 +1441,23 @@ describe("buildConfigChain", function () {
     it("should throw when `preset.overrides` requires `filename` but it was not passed", () => {
       expect(() => {
         loadOptions({
-          presets: [require("./fixtures/config-loading/preset5")],
+          presets: ["./fixtures/config-loading/preset5"],
         });
       }).toThrow(/Preset \/\* your preset \*\/ requires a filename/);
+    });
+
+    it("should not throw error on $schema property in json config files", () => {
+      const filename = fixture(
+        "config-files",
+        "babel-config-json-$schema-property",
+        "babel.config.json",
+      );
+      expect(() => {
+        babel.loadPartialConfig({
+          filename,
+          cwd: path.dirname(filename),
+        });
+      }).not.toThrow();
     });
   });
 });

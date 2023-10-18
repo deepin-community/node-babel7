@@ -1,0 +1,998 @@
+Description: tsc workaround
+Author: Yadd <yadd@debian.org>
+Forwarded: not-needed
+Last-Update: 2022-11-29
+
+--- a/lib/third-party-libs.d.ts
++++ b/lib/third-party-libs.d.ts
+@@ -1,7 +1,8 @@
+ declare module "js-tokens" {
+   // TODO(Babel 8): Remove this
+-  export { default } from "js-tokens-BABEL_8_BREAKING-true";
+-  export * from "js-tokens-BABEL_8_BREAKING-true";
++// @ts-ignore
++  export { default } from "js-tokens";
++  export * from "js-tokens";
+ }
+ 
+ declare module "@babel/preset-modules/lib/plugins/transform-async-arrows-in-class" {
+--- a/packages/babel-cli/src/babel-external-helpers.ts
++++ b/packages/babel-cli/src/babel-external-helpers.ts
+@@ -17,18 +17,23 @@
+   return values;
+ }
+ 
++// @ts-ignore
+ commander.option(
+   "-l, --whitelist [whitelist]",
+   "Whitelist of helpers to ONLY include",
+   collect,
+ );
++// @ts-ignore
+ commander.option(
+   "-t, --output-type [type]",
+   "Type of output (global|umd|var)",
+   "global",
+ );
+ 
++// @ts-ignore
+ commander.usage("[options]");
++// @ts-ignore
+ commander.parse(process.argv);
+ 
++// @ts-ignore
+ console.log(buildExternalHelpers(commander.whitelist, commander.outputType));
+--- a/packages/babel-cli/src/babel/options.ts
++++ b/packages/babel-cli/src/babel/options.ts
+@@ -7,26 +7,32 @@
+ import type { InputOptions } from "@babel/core";
+ 
+ // Standard Babel input configs.
++// @ts-ignore
+ commander.option(
+   "-f, --filename [filename]",
+   "The filename to use when reading from stdin. This will be used in source-maps, errors etc.",
+ );
++// @ts-ignore
+ commander.option(
+   "--presets [list]",
+   "A comma-separated list of preset names.",
+   collect,
+ );
++// @ts-ignore
+ commander.option(
+   "--plugins [list]",
+   "A comma-separated list of plugin names.",
+   collect,
+ );
++// @ts-ignore
+ commander.option("--config-file [path]", "Path to a .babelrc file to use.");
++// @ts-ignore
+ commander.option(
+   "--env-name [name]",
+   "The name of the 'env' to use when loading configs and plugins. " +
+     "Defaults to the value of BABEL_ENV, or else NODE_ENV, or else 'development'.",
+ );
++// @ts-ignore
+ commander.option(
+   "--root-mode [mode]",
+   "The project-root resolution mode. " +
+@@ -34,16 +40,20 @@
+ );
+ 
+ // Basic file input configuration.
++// @ts-ignore
+ commander.option("--source-type [script|module]", "");
++// @ts-ignore
+ commander.option(
+   "--no-babelrc",
+   "Whether or not to look up .babelrc and .babelignore files.",
+ );
++// @ts-ignore
+ commander.option(
+   "--ignore [list]",
+   "List of glob paths to **not** compile.",
+   collect,
+ );
++// @ts-ignore
+ commander.option(
+   "--only [list]",
+   "List of glob paths to **only** compile.",
+@@ -51,53 +61,64 @@
+ );
+ 
+ // Misc babel config.
++// @ts-ignore
+ commander.option(
+   "--no-highlight-code",
+   "Enable or disable ANSI syntax highlighting of code frames. (on by default)",
+ );
+ 
+ // General output formatting.
++// @ts-ignore
+ commander.option(
+   "--no-comments",
+   "Write comments to generated output. (true by default)",
+ );
++// @ts-ignore
+ commander.option(
+   "--retain-lines",
+   "Retain line numbers. This will result in really ugly code.",
+ );
++// @ts-ignore
+ commander.option(
+   "--compact [true|false|auto]",
+   "Do not include superfluous whitespace characters and line terminators.",
+   booleanify,
+ );
++// @ts-ignore
+ commander.option(
+   "--minified",
+   "Save as many bytes when printing. (false by default)",
+ );
++// @ts-ignore
+ commander.option(
+   "--auxiliary-comment-before [string]",
+   "Print a comment before any injected non-user code.",
+ );
++// @ts-ignore
+ commander.option(
+   "--auxiliary-comment-after [string]",
+   "Print a comment after any injected non-user code.",
+ );
+ 
+ // General source map formatting.
++// @ts-ignore
+ commander.option(
+   "-s, --source-maps [true|false|inline|both]",
+   "",
+   booleanify,
+   undefined,
+ );
++// @ts-ignore
+ commander.option(
+   "--source-map-target [string]",
+   "Set `file` on returned source map.",
+ );
++// @ts-ignore
+ commander.option(
+   "--source-file-name [string]",
+   "Set `sources[0]` on returned source map.",
+ );
++// @ts-ignore
+ commander.option(
+   "--source-root [filename]",
+   "The root from which all sources are relative.",
+@@ -105,12 +126,15 @@
+ 
+ if (!process.env.BABEL_8_BREAKING) {
+   // Config params for certain module output formats.
++// @ts-ignore
+   commander.option(
+     "--module-root [filename]",
+     // eslint-disable-next-line max-len
+     "Optional prefix for the AMD module formatter that will be prepended to the filename on module definitions.",
+   );
++// @ts-ignore
+   commander.option("-M, --module-ids", "Insert an explicit id for modules.");
++// @ts-ignore
+   commander.option(
+     "--module-id [string]",
+     "Specify a custom name for module ids.",
+@@ -118,6 +142,7 @@
+ }
+ 
+ // "babel" command specific arguments that are not passed to @babel/core.
++// @ts-ignore
+ commander.option(
+   "-x, --extensions [extensions]",
+   "List of extensions to compile when a directory has been the input. [" +
+@@ -125,64 +150,80 @@
+     "]",
+   collect,
+ );
++// @ts-ignore
+ commander.option(
+   "--keep-file-extension",
+   "Preserve the file extensions of the input files.",
+ );
++// @ts-ignore
+ commander.option("-w, --watch", "Recompile files on changes.");
++// @ts-ignore
+ commander.option(
+   "--skip-initial-build",
+   "Do not compile files before watching.",
+ );
++// @ts-ignore
+ commander.option(
+   "-o, --out-file [out]",
+   "Compile all input files into a single file.",
+ );
++// @ts-ignore
+ commander.option(
+   "-d, --out-dir [out]",
+   "Compile an input directory of modules into an output directory.",
+ );
++// @ts-ignore
+ commander.option(
+   "--relative",
+   "Compile into an output directory relative to input directory or file. Requires --out-dir [out]",
+ );
+ 
++// @ts-ignore
+ commander.option(
+   "-D, --copy-files",
+   "When compiling a directory copy over non-compilable files.",
+ );
++// @ts-ignore
+ commander.option(
+   "--include-dotfiles",
+   "Include dotfiles when compiling and copying non-compilable files.",
+ );
++// @ts-ignore
+ commander.option(
+   "--no-copy-ignored",
+   "Exclude ignored files when copying non-compilable files.",
+ );
+ 
++// @ts-ignore
+ commander.option(
+   "--verbose",
+   "Log everything. This option conflicts with --quiet",
+ );
++// @ts-ignore
+ commander.option(
+   "--quiet",
+   "Don't log anything. This option conflicts with --verbose",
+ );
++// @ts-ignore
+ commander.option(
+   "--delete-dir-on-start",
+   "Delete the out directory before compilation.",
+ );
++// @ts-ignore
+ commander.option(
+   "--out-file-extension [string]",
+   "Use a specific extension for the output files",
+ );
+ 
+ declare const PACKAGE_JSON: { name: string; version: string };
++// @ts-ignore
+ commander.version(PACKAGE_JSON.version + " (@babel/core " + version + ")");
++// @ts-ignore
+ commander.usage("[options] <files ...>");
+ // register an empty action handler so that commander.js can throw on
+ // unknown options _after_ args
+ // see https://github.com/tj/commander.js/issues/561#issuecomment-522209408
++// @ts-ignore
+ commander.action(() => {});
+ 
+ export type CmdOptions = {
+@@ -210,10 +251,12 @@
+ 
+ export default function parseArgv(args: Array<string>): CmdOptions | null {
+   //
++// @ts-ignore
+   commander.parse(args);
+ 
+   const errors: string[] = [];
+ 
++// @ts-ignore
+   let filenames = commander.args.reduce(function (globbed: string[], input) {
+     let files = glob.sync(input);
+     if (!files.length) files = [input];
+@@ -223,25 +266,31 @@
+ 
+   filenames = Array.from(new Set(filenames));
+ 
++// @ts-ignore
+   filenames.forEach(function (filename) {
+     if (!fs.existsSync(filename)) {
+       errors.push(filename + " does not exist");
+     }
+   });
+ 
++// @ts-ignore
+   if (commander.outDir && !filenames.length) {
+     errors.push("--out-dir requires filenames");
+   }
+ 
++// @ts-ignore
+   if (commander.outFile && commander.outDir) {
+     errors.push("--out-file and --out-dir cannot be used together");
+   }
+ 
++// @ts-ignore
+   if (commander.relative && !commander.outDir) {
+     errors.push("--relative requires --out-dir usage");
+   }
+ 
++// @ts-ignore
+   if (commander.watch) {
++// @ts-ignore
+     if (!commander.outFile && !commander.outDir) {
+       errors.push("--watch requires --out-file or --out-dir");
+     }
+@@ -251,21 +300,27 @@
+     }
+   }
+ 
++// @ts-ignore
+   if (commander.skipInitialBuild && !commander.watch) {
+     errors.push("--skip-initial-build requires --watch");
+   }
++// @ts-ignore
+   if (commander.deleteDirOnStart && !commander.outDir) {
+     errors.push("--delete-dir-on-start requires --out-dir");
+   }
+ 
++// @ts-ignore
+   if (commander.verbose && commander.quiet) {
+     errors.push("--verbose and --quiet cannot be used together");
+   }
+ 
+   if (
++// @ts-ignore
+     !commander.outDir &&
+     filenames.length === 0 &&
++// @ts-ignore
+     typeof commander.filename !== "string" &&
++// @ts-ignore
+     commander.babelrc !== false
+   ) {
+     errors.push(
+@@ -273,6 +328,7 @@
+     );
+   }
+ 
++// @ts-ignore
+   if (commander.keepFileExtension && commander.outFileExtension) {
+     errors.push(
+       "--out-file-extension cannot be used with --keep-file-extension",
+@@ -287,6 +343,7 @@
+     return null;
+   }
+ 
++// @ts-ignore
+   const opts = commander.opts();
+ 
+   const babelOptions: InputOptions = {
+--- a/packages/babel-core/src/config/caching.ts
++++ b/packages/babel-core/src/config/caching.ts
+@@ -395,7 +395,7 @@
+       "Cache keys must be either string, boolean, number, null, or undefined.",
+     );
+   }
+-  // @ts-expect-error Type 'unknown' is not assignable to type 'SimpleType'. This can be removed
++  // @ts-ignore Type 'unknown' is not assignable to type 'SimpleType'. This can be removed
+   // when strictNullCheck is enabled
+   return value;
+ }
+--- a/packages/babel-core/src/config/files/import-meta-resolve.ts
++++ b/packages/babel-core/src/config/files/import-meta-resolve.ts
+@@ -11,6 +11,7 @@
+ 
+ // import.meta.resolve is only available in ESM, but this file is compiled to CJS.
+ // We can extract it using dynamic import.
++// @ts-ignore
+ const importMetaResolveP: Promise<ImportMeta["resolve"]> =
+   import_ &&
+   // Due to a Node.js/V8 bug (https://github.com/nodejs/node/issues/35889), we cannot
+@@ -41,8 +42,11 @@
+     : Promise.resolve(polyfill);
+ 
+ export default async function resolve(
++// @ts-ignore
+   specifier: Parameters<ImportMeta["resolve"]>[0],
++// @ts-ignore
+   parent?: Parameters<ImportMeta["resolve"]>[1],
++// @ts-ignore
+ ): ReturnType<ImportMeta["resolve"]> {
+   return (await importMetaResolveP)(specifier, parent);
+ }
+--- a/packages/babel-core/src/config/files/plugins.ts
++++ b/packages/babel-core/src/config/files/plugins.ts
+@@ -133,7 +133,9 @@
+ }
+ 
+ async function tryImportMetaResolve(
++// @ts-ignore
+   id: Parameters<ImportMeta["resolve"]>[0],
++// @ts-ignore
+   options: Parameters<ImportMeta["resolve"]>[1],
+ ): Promise<Result<string>> {
+   try {
+--- a/packages/babel-core/src/config/validation/option-assertions.ts
++++ b/packages/babel-core/src/config/validation/option-assertions.ts
+@@ -85,7 +85,7 @@
+       `${msg(loc)} must be a "root", "upward", "upward-optional" or undefined`,
+     );
+   }
+-  // @ts-expect-error: TS can only narrow down the type when "strictNullCheck" is true
++  // @ts-ignore: TS can only narrow down the type when "strictNullCheck" is true
+   return value;
+ }
+ 
+@@ -103,7 +103,7 @@
+       `${msg(loc)} must be a boolean, "inline", "both", or undefined`,
+     );
+   }
+-  // @ts-expect-error: TS can only narrow down the type when "strictNullCheck" is true
++  // @ts-ignore: TS can only narrow down the type when "strictNullCheck" is true
+   return value;
+ }
+ 
+@@ -114,7 +114,7 @@
+   if (value !== undefined && typeof value !== "boolean" && value !== "auto") {
+     throw new Error(`${msg(loc)} must be a boolean, "auto", or undefined`);
+   }
+-  // @ts-expect-error: TS can only narrow down the type when "strictNullCheck" is true
++  // @ts-ignore: TS can only narrow down the type when "strictNullCheck" is true
+   return value;
+ }
+ 
+@@ -132,7 +132,7 @@
+       `${msg(loc)} must be "module", "script", "unambiguous", or undefined`,
+     );
+   }
+-  // @ts-expect-error: TS can only narrow down the type when "strictNullCheck" is true
++  // @ts-ignore: TS can only narrow down the type when "strictNullCheck" is true
+   return value;
+ }
+ 
+@@ -190,7 +190,7 @@
+   if (value !== undefined && typeof value !== "string") {
+     throw new Error(`${msg(loc)} must be a string, or undefined`);
+   }
+-  // @ts-expect-error: TS can only narrow down the type when "strictNullCheck" is true
++  // @ts-ignore: TS can only narrow down the type when "strictNullCheck" is true
+   return value;
+ }
+ 
+@@ -201,7 +201,7 @@
+   if (value !== undefined && typeof value !== "function") {
+     throw new Error(`${msg(loc)} must be a function, or undefined`);
+   }
+-  // @ts-expect-error: TS can only narrow down the type when "strictNullCheck" is true
++  // @ts-ignore: TS can only narrow down the type when "strictNullCheck" is true
+   return value;
+ }
+ 
+@@ -212,7 +212,7 @@
+   if (value !== undefined && typeof value !== "boolean") {
+     throw new Error(`${msg(loc)} must be a boolean, or undefined`);
+   }
+-  // @ts-expect-error: TS can only narrow down the type when "strictNullCheck" is true
++  // @ts-ignore: TS can only narrow down the type when "strictNullCheck" is true
+   return value;
+ }
+ 
+@@ -271,7 +271,7 @@
+   value: unknown,
+ ): ConfigApplicableTest | void {
+   if (value === undefined) {
+-    // @ts-expect-error: TS can only narrow down the type when "strictNullCheck" is true
++    // @ts-ignore: TS can only narrow down the type when "strictNullCheck" is true
+     return value;
+   }
+ 
+@@ -313,7 +313,7 @@
+         `got ${JSON.stringify(value)}`,
+     );
+   }
+-  // @ts-expect-error: TS can only narrow down the type when "strictNullCheck" is true
++  // @ts-ignore: TS can only narrow down the type when "strictNullCheck" is true
+   return value;
+ }
+ 
+@@ -322,7 +322,7 @@
+   value: unknown,
+ ): BabelrcSearch | void {
+   if (value === undefined || typeof value === "boolean") {
+-    // @ts-expect-error: TS can only narrow down the type when "strictNullCheck" is true
++    // @ts-ignore: TS can only narrow down the type when "strictNullCheck" is true
+     return value;
+   }
+ 
+--- a/packages/babel-core/src/tools/build-external-helpers.ts
++++ b/packages/babel-core/src/tools/build-external-helpers.ts
+@@ -24,6 +24,7 @@
+ } from "@babel/types";
+ import type * as t from "@babel/types";
+ import File from "../transformation/file/file";
++// @ts-ignore
+ import type { PublicReplacements } from "@babel/template/src/options";
+ 
+ // Wrapped to avoid wasting time parsing this when almost no-one uses
+--- a/packages/babel-helper-create-class-features-plugin/src/misc.ts
++++ b/packages/babel-helper-create-class-features-plugin/src/misc.ts
+@@ -123,8 +123,10 @@
+   for (const computedPath of computedPaths) {
+     const computedKey = computedPath.get("key");
+     if (computedKey.isReferencedIdentifier()) {
++// @ts-ignore
+       handleClassTDZ(computedKey, state);
+     } else {
++// @ts-ignore
+       computedKey.traverse(classFieldDefinitionEvaluationTDZVisitor, state);
+     }
+ 
+--- a/packages/babel-helper-split-export-declaration/src/index.ts
++++ b/packages/babel-helper-split-export-declaration/src/index.ts
+@@ -30,6 +30,7 @@
+ 
+     const scope = declaration.isScope()
+       ? declaration.scope.parent
++// @ts-ignore
+       : declaration.scope;
+ 
+     // @ts-expect-error id is not defined in expressions other than function/class
+--- a/packages/babel-helper-transform-fixture-test-runner/src/index.ts
++++ b/packages/babel-helper-transform-fixture-test-runner/src/index.ts
+@@ -141,7 +141,9 @@
+       cachedData: cached.cachedData,
+       produceCachedData: true,
+     });
++// @ts-ignore
+     if (script.cachedDataProduced) {
++// @ts-ignore
+       cached.cachedData = script.cachedData;
+     }
+   }
+--- a/packages/babel-highlight/src/index.ts
++++ b/packages/babel-highlight/src/index.ts
+@@ -1,5 +1,6 @@
+ /// <reference path="../../../lib/third-party-libs.d.ts" />
+ 
++// @ts-ignore
+ import type { Token as JSToken, JSXToken } from "js-tokens";
+ import jsTokens from "js-tokens";
+ 
+@@ -245,6 +246,7 @@
+  * Whether the code should be highlighted given the passed options.
+  */
+ export function shouldHighlight(options: Options): boolean {
++// @ts-ignore
+   return !!Chalk.supportsColor || options.forceColor;
+ }
+ 
+@@ -253,6 +255,7 @@
+  */
+ export function getChalk(options: Options) {
+   return options.forceColor
++// @ts-ignore
+     ? new Chalk.constructor({ enabled: true, level: 1 })
+     : Chalk;
+ }
+--- a/packages/babel-node/src/_babel-node.ts
++++ b/packages/babel-node/src/_babel-node.ts
+@@ -79,18 +79,27 @@
+   caller: {
+     name: "@babel/node",
+   },
++// @ts-ignore
+   extensions: program.extensions,
++// @ts-ignore
+   ignore: program.ignore,
++// @ts-ignore
+   only: program.only,
++// @ts-ignore
+   plugins: program.plugins,
++// @ts-ignore
+   presets: program.presets,
++// @ts-ignore
+   configFile: program.configFile,
++// @ts-ignore
+   envName: program.envName,
++// @ts-ignore
+   rootMode: program.rootMode,
+ 
+   // Commander will default the "--no-" arguments to true, but we want to
+   // leave them undefined so that @babel/core can handle the
+   // default-assignment logic on its own.
++// @ts-ignore
+   babelrc: program.babelrc === true ? undefined : program.babelrc,
+ };
+ 
+@@ -146,7 +155,9 @@
+ 
+   code = babel.transformSync(code, {
+     filename: filename,
++// @ts-ignore
+     presets: program.presets,
++// @ts-ignore
+     plugins: (program.plugins || []).concat([replPlugin]),
+   }).code;
+ 
+@@ -155,8 +166,11 @@
+   });
+ };
+ 
++// @ts-ignore
+ if (program.eval || program.print) {
++// @ts-ignore
+   let code = program.eval;
++// @ts-ignore
+   if (!code || code === true) code = program.print;
+ 
+   global.__filename = "[eval]";
+@@ -172,11 +186,13 @@
+   global.require = module.require.bind(module);
+ 
+   const result = _eval(code, global.__filename);
++// @ts-ignore
+   if (program.print) {
+     const output = typeof result === "string" ? result : inspect(result);
+     process.stdout.write(output + "\n");
+   }
+ } else {
++// @ts-ignore
+   if (program.args.length) {
+     // slice all arguments up to the first filename since they're babel args that we handle
+     let args = process.argv.slice(2);
+@@ -190,6 +206,7 @@
+       }
+ 
+       if (arg[0] === "-") {
++// @ts-ignore
+         const parsedOption = program.options.find((option: any) => {
+           return option.long === arg || option.short === arg;
+         });
+@@ -197,6 +214,7 @@
+           return;
+         }
+         const optionName = parsedOption.attributeName();
++// @ts-ignore
+         const parsedArg = program[optionName];
+         if (optionName === "require" || (parsedArg && parsedArg !== true)) {
+           ignoreNext = true;
+@@ -229,7 +247,9 @@
+ 
+ // We have to handle require ourselves, as we want to require it in the context of babel-register
+ function requireArgs() {
++// @ts-ignore
+   if (program.require) {
++// @ts-ignore
+     require(require.resolve(program.require, {
+       paths: [process.cwd()],
+     }));
+--- a/packages/babel-plugin-proposal-object-rest-spread/src/index.ts
++++ b/packages/babel-plugin-proposal-object-rest-spread/src/index.ts
+@@ -148,9 +148,12 @@
+       // PrivateName is handled in destructuring-private plugin
+       const key = propPath.get("key") as NodePath<t.Expression>;
+       if (propPath.node.computed && !key.isPure()) {
++// @ts-ignore
+         const name = scope.generateUidBasedOnNode(key.node);
++// @ts-ignore
+         const declarator = t.variableDeclarator(t.identifier(name), key.node);
+         impureComputedPropertyDeclarators.push(declarator);
++// @ts-ignore
+         key.replaceWith(t.identifier(name));
+       }
+     }
+@@ -326,11 +329,15 @@
+         for (i = 0; i < params.length && !idInRest; ++i) {
+           const param = params[i];
+           if (!paramsWithRestElement.has(i)) {
++// @ts-ignore
+             if (param.isReferencedIdentifier() || param.isBindingIdentifier()) {
++// @ts-ignore
+               IdentifierHandler(param, path.scope);
+             } else {
++// @ts-ignore
+               param.traverse(
+                 {
++// @ts-ignore
+                   "Scope|TypeAnnotation|TSTypeAnnotation": path => path.skip(),
+                   "ReferencedIdentifier|BindingIdentifier": IdentifierHandler,
+                 },
+--- a/packages/babel-plugin-syntax-flow/src/index.ts
++++ b/packages/babel-plugin-syntax-flow/src/index.ts
+@@ -6,6 +6,7 @@
+ 
+   // When enabled and plugins includes flow, all files should be parsed as if
+   // the @flow pragma was provided.
++// @ts-ignore
+   const { all, enums } = options;
+ 
+   if (typeof all !== "boolean" && typeof all !== "undefined") {
+@@ -30,6 +31,7 @@
+         return;
+       }
+ 
++// @ts-ignore
+       parserOpts.plugins.push(["flow", { all, enums }]);
+     },
+   };
+--- a/packages/babel-plugin-syntax-pipeline-operator/src/index.ts
++++ b/packages/babel-plugin-syntax-pipeline-operator/src/index.ts
+@@ -32,6 +32,7 @@
+ 
+     manipulateOptions(opts, parserOpts) {
+       // Add parser options.
++// @ts-ignore
+       parserOpts.plugins.push(["pipelineOperator", { proposal, topicToken }]);
+ 
+       // Add generator options.
+--- a/packages/babel-plugin-transform-typescript/src/enum.ts
++++ b/packages/babel-plugin-transform-typescript/src/enum.ts
+@@ -159,12 +159,14 @@
+         const initializerPath = memberPath.get("initializer");
+ 
+         if (initializerPath.isReferencedIdentifier()) {
++// @ts-ignore
+           ReferencedIdentifier(initializerPath, {
+             t,
+             seen,
+             path,
+           });
+         } else {
++// @ts-ignore
+           initializerPath.traverse(enumSelfReferenceVisitor, { t, seen, path });
+         }
+ 
+--- a/packages/babel-traverse/src/path/evaluation.ts
++++ b/packages/babel-traverse/src/path/evaluation.ts
+@@ -189,6 +189,7 @@
+   }
+ 
+   if (path.isReferencedIdentifier()) {
++// @ts-ignore
+     const binding = path.scope.getBinding(path.node.name);
+ 
+     if (binding && binding.constantViolations.length > 0) {
+@@ -202,10 +203,13 @@
+     if (binding?.hasValue) {
+       return binding.value;
+     } else {
++// @ts-ignore
+       if (path.node.name === "undefined") {
+         return binding ? deopt(binding.path, state) : undefined;
++// @ts-ignore
+       } else if (path.node.name === "Infinity") {
+         return binding ? deopt(binding.path, state) : Infinity;
++// @ts-ignore
+       } else if (path.node.name === "NaN") {
+         return binding ? deopt(binding.path, state) : NaN;
+       }
+@@ -219,14 +223,18 @@
+     }
+   }
+ 
++// @ts-ignore
+   if (path.isUnaryExpression({ prefix: true })) {
++// @ts-ignore
+     if (path.node.operator === "void") {
+       // we don't need to evaluate the argument to know what this will return
+       return undefined;
+     }
+ 
++// @ts-ignore
+     const argument = path.get("argument");
+     if (
++// @ts-ignore
+       path.node.operator === "typeof" &&
+       (argument.isFunction() || argument.isClass())
+     ) {
+@@ -235,6 +243,7 @@
+ 
+     const arg = evaluateCached(argument, state);
+     if (!state.confident) return;
++// @ts-ignore
+     switch (path.node.operator) {
+       case "!":
+         return !arg;
+@@ -249,8 +258,10 @@
+     }
+   }
+ 
++// @ts-ignore
+   if (path.isArrayExpression()) {
+     const arr = [];
++// @ts-ignore
+     const elems: Array<NodePath> = path.get("elements");
+     for (const elem of elems) {
+       const elemValue = elem.evaluate();
+@@ -264,8 +275,10 @@
+     return arr;
+   }
+ 
++// @ts-ignore
+   if (path.isObjectExpression()) {
+     const obj = {};
++// @ts-ignore
+     const props = path.get("properties");
+     for (const prop of props) {
+       if (prop.isObjectMethod() || prop.isSpreadElement()) {
+@@ -273,7 +286,7 @@
+       }
+       const keyPath = (prop as NodePath<t.ObjectProperty>).get("key");
+       let key;
+-      // @ts-expect-error todo(flow->ts): type refinement issues ObjectMethod and SpreadElement somehow not excluded
++      // @ts-ignore
+       if (prop.node.computed) {
+         key = keyPath.evaluate();
+         if (!key.confident) {
+@@ -299,16 +312,20 @@
+     return obj;
+   }
+ 
++// @ts-ignore
+   if (path.isLogicalExpression()) {
+     // If we are confident that the left side of an && is false, or the left
+     // side of an || is true, we can be confident about the entire expression
+     const wasConfident = state.confident;
++// @ts-ignore
+     const left = evaluateCached(path.get("left"), state);
+     const leftConfident = state.confident;
+     state.confident = wasConfident;
++// @ts-ignore
+     const right = evaluateCached(path.get("right"), state);
+     const rightConfident = state.confident;
+ 
++// @ts-ignore
+     switch (path.node.operator) {
+       case "||":
+         // TODO consider having a "truthy type" that doesn't bail on
+@@ -330,12 +347,16 @@
+     }
+   }
+ 
++// @ts-ignore
+   if (path.isBinaryExpression()) {
++// @ts-ignore
+     const left = evaluateCached(path.get("left"), state);
+     if (!state.confident) return;
++// @ts-ignore
+     const right = evaluateCached(path.get("right"), state);
+     if (!state.confident) return;
+ 
++// @ts-ignore
+     switch (path.node.operator) {
+       case "-":
+         return left - right;
+@@ -380,7 +401,9 @@
+     }
+   }
+ 
++// @ts-ignore
+   if (path.isCallExpression()) {
++// @ts-ignore
+     const callee = path.get("callee");
+     let context;
+     let func;
+@@ -388,9 +411,11 @@
+     // Number(1);
+     if (
+       callee.isIdentifier() &&
++// @ts-ignore
+       !path.scope.getBinding(callee.node.name) &&
+       isValidCallee(callee.node.name)
+     ) {
++// @ts-ignore
+       func = global[callee.node.name];
+     }
+ 
+@@ -405,17 +430,18 @@
+         isValidCallee(object.node.name) &&
+         !isInvalidMethod(property.node.name)
+       ) {
++// @ts-ignore
+         context = global[object.node.name];
+-        // @ts-expect-error property may not exist in context object
++// @ts-ignore
+         func = context[property.node.name];
+       }
+ 
+       // "abc".charCodeAt(4)
+       if (object.isLiteral() && property.isIdentifier()) {
+-        // @ts-expect-error todo(flow->ts): consider checking ast node type instead of value type (StringLiteral and NumberLiteral)
++        // @ts-ignore todo(flow->ts): consider checking ast node type instead of value type (StringLiteral and NumberLiteral)
+         const type = typeof object.node.value;
+         if (type === "string" || type === "number") {
+-          // @ts-expect-error todo(flow->ts): consider checking ast node type instead of value type
++          // @ts-ignore todo(flow->ts): consider checking ast node type instead of value type
+           context = object.node.value;
+           func = context[property.node.name];
+         }
+@@ -423,6 +449,7 @@
+     }
+ 
+     if (func) {
++// @ts-ignore
+       const args = path.get("arguments").map(arg => evaluateCached(arg, state));
+       if (!state.confident) return;
+ 
+--- a/packages/babel-traverse/src/path/index.ts
++++ b/packages/babel-traverse/src/path/index.ts
+@@ -109,6 +109,7 @@
+   }
+ 
+   getScope(scope: Scope): Scope {
++// @ts-ignore
+     return this.isScope() ? new Scope(this) : scope;
+   }
+ 
+--- a/packages/babel-traverse/src/path/introspection.ts
++++ b/packages/babel-traverse/src/path/introspection.ts
+@@ -195,11 +195,17 @@
+ ): boolean {
+   if (!this.isReferencedIdentifier()) {
+     if (
++// @ts-ignore
+       (this.isJSXMemberExpression() &&
++// @ts-ignore
+         this.node.property.name === importName) ||
++// @ts-ignore
+       ((this.isMemberExpression() || this.isOptionalMemberExpression()) &&
++// @ts-ignore
+         (this.node.computed
++// @ts-ignore
+           ? isStringLiteral(this.node.property, { value: importName })
++// @ts-ignore
+           : (this.node.property as t.Identifier).name === importName))
+     ) {
+       const object = (
+@@ -562,6 +568,7 @@
+       // otherwise it's a request for a pattern and that's a bit more tricky
+     }
+   } else if (this.isReferencedIdentifier()) {
++// @ts-ignore
+     const binding = this.scope.getBinding(this.node.name);
+     if (!binding) return;
+ 
+@@ -577,19 +584,24 @@
+       if (this.find(parent => parent.node === ret.node)) return;
+       return ret;
+     }
++// @ts-ignore
+   } else if (this.isTypeCastExpression()) {
+     // @ ts-ignore todo: babel-types
++// @ts-ignore
+     return this.get("expression").resolve(dangerous, resolved);
++// @ts-ignore
+   } else if (dangerous && this.isMemberExpression()) {
+     // this is dangerous, as non-direct target assignments will mutate it's state
+     // making this resolution inaccurate
+ 
++// @ts-ignore
+     const targetKey = this.toComputedKey();
+     if (!isLiteral(targetKey)) return;
+ 
+     // @ts-expect-error todo(flow->ts): NullLiteral
+     const targetName = targetKey.value;
+ 
++// @ts-ignore
+     const target = this.get("object").resolve(dangerous, resolved);
+ 
+     if (target.isObjectExpression()) {
+--- a/packages/babel-traverse/src/scope/index.ts
++++ b/packages/babel-traverse/src/scope/index.ts
+@@ -246,13 +246,16 @@
+     if (path.isBlockScoped()) return;
+ 
+     // delegate import handing to the `ImportDeclaration` method
++// @ts-ignore
+     if (path.isImportDeclaration()) return;
+ 
+     // this will be hit again once we traverse into it after this iteration
++// @ts-ignore
+     if (path.isExportDeclaration()) return;
+ 
+     // we've ran into a declaration!
+     const parent =
++// @ts-ignore
+       path.scope.getFunctionParent() || path.scope.getProgramParent();
+     parent.registerDeclaration(path);
+   },
+--- a/types-babel-standalone/index.d.ts
++++ b/types-babel-standalone/index.d.ts
+@@ -4,6 +4,7 @@
+ // Definitions: https://github.com/DefinitelyTyped/DefinitelyTyped
+ // Minimum TypeScript Version: 3.4
+ 
++// @ts-ignore
+ import { TransformOptions, types, FileResultCallback, BabelFileResult } from '@babel/core';
+ 
+ export function transform(code: string, options: TransformOptions): BabelFileResult;
