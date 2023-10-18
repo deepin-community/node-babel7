@@ -1,0 +1,15 @@
+Description: fix warning due to @rollup/plugin-replace update
+Author: Yadd <yadd@debian.org>
+Forwarded: no
+Last-Update: 2021-12-16
+
+--- a/Gulpfile.mjs
++++ b/Gulpfile.mjs
+@@ -330,7 +330,6 @@
+           plugins: [
+             rollupBabelSource(),
+             rollupReplace({
+-              preventAssignment: true,
+               values: {
+                 "process.env.NODE_ENV": JSON.stringify(process.env.NODE_ENV),
+                 BABEL_VERSION: JSON.stringify(babelVersion),

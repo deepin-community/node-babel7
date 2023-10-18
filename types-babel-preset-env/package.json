@@ -1,7 +1,8 @@
 {
     "name": "@types/babel__preset-env",
-    "version": "7.9.1",
+    "version": "7.9.2",
     "description": "TypeScript definitions for @babel/preset-env",
+    "homepage": "https://github.com/DefinitelyTyped/DefinitelyTyped/tree/master/types/babel__preset-env",
     "license": "MIT",
     "contributors": [
         {
@@ -19,6 +20,6 @@
     },
     "scripts": {},
     "dependencies": {},
-    "typesPublisherContentHash": "326a2d41abcff39fcc4e397a44a0ac3e9375fdb344d2e4f4fe84d628c154b650",
-    "typeScriptVersion": "3.2"
+    "typesPublisherContentHash": "939eda377720a2c4cdc7df9c58b676b80f6fa9d07b2480d276b09dc35ff89c32",
+    "typeScriptVersion": "3.6"
 }

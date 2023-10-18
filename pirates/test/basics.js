@@ -21,6 +21,35 @@ test('basics', (t) => {
   reverts.forEach(call);
 });
 
+test('ignore node_modules inactive', (t) => {
+  const reverts = [
+    t.context.addHook((code) => code.replace('@@a', '<a>'), {
+      ignoreNodeModules: false,
+    }),
+    t.context.addHook((code) => code.replace('@@b', '<b>'), {
+      ignoreNodeModules: false,
+    }),
+  ];
+
+  assertModule(t, 'node_modules/basic.js', 'in basics-bar <a> <b>');
+
+  reverts.forEach(call);
+});
+
+test('ignore node_modules active', (t) => {
+  const reverts = [
+    t.context.addHook((code) => code.replace('@@a', '<a>'), {
+      ignoreNodeModules: true,
+    }),
+    t.context.addHook((code) => code.replace('@@b', '<b>'), {
+      ignoreNodeModules: true,
+    }),
+  ];
+  assertModule(t, 'node_modules/basic.js', 'in basics-bar @@a @@b');
+
+  reverts.forEach(call);
+});
+
 test('matchers', (t) => {
   const reverts = [
     t.context.addHook((code) => code.replace('@@a', '<a>'), {
@@ -55,4 +84,32 @@ test('matcher is called only once per file', (t) => {
   t.is(timesMatcherCalled, 2, 'matcher is only called once per file');
 
   reverts.forEach(call);
+});
+
+test('reverts to previous loader', (t) => {
+  require.extensions['.foojs'] = require.extensions['.js'];
+  const revert = t.context.addHook((code) => code.replace('@@a', '<a>'), {
+    exts: ['.foojs'],
+  });
+
+  t.not(require.extensions['.foojs'], require.extensions['.js']);
+
+  revert();
+
+  t.is(require.extensions['.foojs'], require.extensions['.js']);
+});
+
+test('reverts to nothing if no previous loader', (t) => {
+  const oldKeys = Object.keys(require.extensions);
+  t.is(require.extensions['.foo2js'], undefined);
+  const revert = t.context.addHook((code) => code.replace('@@a', '<a>'), {
+    exts: ['.foo2js'],
+  });
+
+  t.not(require.extensions['.foo2js'], undefined);
+
+  revert();
+
+  t.is(require.extensions['.foo2js'], undefined);
+  t.deepEqual(Object.keys(require.extensions), oldKeys);
 });

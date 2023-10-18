@@ -1,0 +1,2 @@
+# False positive
+embedded-javascript-library usr/share/nodejs/@babel/core/lib/gensync-utils/async.js please use libjs-async

@@ -1,22 +1,22 @@
 Description: fix large numbers
-Author: Xavier Guimard <yadd@debian.org>
+Author: Yadd <yadd@debian.org>
 Forwarded: not-needed
-Last-Update: 2020-05-19
+Last-Update: 2021-12-16
 
---- a/packages/babel-core/src/transformation/normalize-file.js
-+++ b/packages/babel-core/src/transformation/normalize-file.js
+--- a/packages/babel-core/src/transformation/normalize-file.ts
++++ b/packages/babel-core/src/transformation/normalize-file.ts
 @@ -12,7 +12,7 @@
- import parser from "../parser";
+ import cloneDeep from "./util/clone-deep";
  
  const debug = buildDebug("babel:transform:file");
--const LARGE_INPUT_SOURCEMAP_THRESHOLD = 1_000_000;
-+const LARGE_INPUT_SOURCEMAP_THRESHOLD = 1000000;
+-const LARGE_INPUT_SOURCEMAP_THRESHOLD = 3_000_000;
++const LARGE_INPUT_SOURCEMAP_THRESHOLD = 3000000;
  
- export type NormalizedFile = {
-   code: string,
---- a/packages/babel-generator/src/index.js
-+++ b/packages/babel-generator/src/index.js
-@@ -79,7 +79,7 @@
+ // These regexps are copied from the convert-source-map package,
+ // but without // or /* at the beginning of the comment.
+--- a/packages/babel-generator/src/index.ts
++++ b/packages/babel-generator/src/index.ts
+@@ -95,7 +95,7 @@
    }
  
    if (format.compact === "auto") {
@@ -25,14 +25,3 @@ Last-Update: 2020-05-19
  
      if (format.compact) {
        console.error(
---- a/packages/babel-traverse/src/context.js
-+++ b/packages/babel-traverse/src/context.js
-@@ -117,7 +117,7 @@
-       // this path no longer belongs to the tree
-       if (path.key === null) continue;
- 
--      if (testing && queue.length >= 10_000) {
-+      if (testing && queue.length >= 10000) {
-         this.trap = true;
-       }
- 

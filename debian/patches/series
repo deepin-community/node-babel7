@@ -1,10 +1,21 @@
 use-system-gulp.patch
 load-plugins-from-system-libraries.diff
 skip-prettier.patch
-fix-babel-plugin-dynamic-import-node.diff
 fix-large-numbers.diff
-fix-pirates-build.diff
-switch-to-yarnpkg.patch
 remove-useless-dependency.patch
 ignore-one-missing-ts-definition.patch
 update-rollup-and-babel-paths.patch
+maybe-missing-async.patch
+drop-prebuild.patch
+fix-gensync.patch
+#fix-terser-import.patch
+fix-for-js-tokens-6.patch
+preset-env-exports-module-transformations.patch
+#eslint-scope-7.patch
+set-pirates-version.patch
+tsc-workaround.patch
+
+# For standalone only
+ignore-rollup-warnings-for-standalone.patch
+fix-for-rollup-3.patch
+CVE-2023-45133.patch

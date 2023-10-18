@@ -1,4 +1,2 @@
-codemods/*
-charcodes/packages/*
-eslint/*
-packages/*
+!benchmark
+debian/build_modules/@types/*

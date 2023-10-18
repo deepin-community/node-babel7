@@ -1,23 +1,38 @@
-import * as t from "@babel/types";
+import {
+  cloneNode,
+  exportNamedDeclaration,
+  exportSpecifier,
+  identifier,
+  variableDeclaration,
+  variableDeclarator,
+} from "@babel/types";
+import type * as t from "@babel/types";
+import type { NodePath } from "@babel/traverse";
 
-export default function splitExportDeclaration(exportDeclaration) {
-  if (!exportDeclaration.isExportDeclaration()) {
-    throw new Error("Only export declarations can be split.");
+export default function splitExportDeclaration(
+  exportDeclaration: NodePath<
+    t.ExportDefaultDeclaration | t.ExportNamedDeclaration
+  >,
+) {
+  if (
+    !exportDeclaration.isExportDeclaration() ||
+    exportDeclaration.isExportAllDeclaration()
+  ) {
+    throw new Error("Only default and named export declarations can be split.");
   }
 
   // build specifiers that point back to this export declaration
-  const isDefault = exportDeclaration.isExportDefaultDeclaration();
-  const declaration = exportDeclaration.get("declaration");
-  const isClassDeclaration = declaration.isClassDeclaration();
 
-  if (isDefault) {
+  if (exportDeclaration.isExportDefaultDeclaration()) {
+    const declaration = exportDeclaration.get("declaration");
     const standaloneDeclaration =
-      declaration.isFunctionDeclaration() || isClassDeclaration;
+      declaration.isFunctionDeclaration() || declaration.isClassDeclaration();
 
     const scope = declaration.isScope()
       ? declaration.scope.parent
       : declaration.scope;
 
+    // @ts-expect-error id is not defined in expressions other than function/class
     let id = declaration.node.id;
     let needBindingRegistration = false;
 
@@ -31,18 +46,22 @@ export default function splitExportDeclaration(exportDeclaration) {
         declaration.isFunctionExpression() ||
         declaration.isClassExpression()
       ) {
-        declaration.node.id = t.cloneNode(id);
+        declaration.node.id = cloneNode(id);
       }
     }
 
     const updatedDeclaration = standaloneDeclaration
-      ? declaration
-      : t.variableDeclaration("var", [
-          t.variableDeclarator(t.cloneNode(id), declaration.node),
+      ? declaration.node
+      : variableDeclaration("var", [
+          variableDeclarator(
+            cloneNode(id),
+            // @ts-expect-error When `standaloneDeclaration` is false, declaration must not be a Function/ClassDeclaration
+            declaration.node,
+          ),
         ]);
 
-    const updatedExportDeclaration = t.exportNamedDeclaration(null, [
-      t.exportSpecifier(t.cloneNode(id), t.identifier("default")),
+    const updatedExportDeclaration = exportNamedDeclaration(null, [
+      exportSpecifier(cloneNode(id), identifier("default")),
     ]);
 
     exportDeclaration.insertAfter(updatedExportDeclaration);
@@ -53,19 +72,21 @@ export default function splitExportDeclaration(exportDeclaration) {
     }
 
     return exportDeclaration;
-  }
-
-  if (exportDeclaration.get("specifiers").length > 0) {
+  } else if (
+    // @ts-expect-error TS can not narrow down to NodePath<t.ExportNamedDeclaration>
+    exportDeclaration.get("specifiers").length > 0
+  ) {
     throw new Error("It doesn't make sense to split exported specifiers.");
   }
 
+  const declaration = exportDeclaration.get("declaration");
   const bindingIdentifiers = declaration.getOuterBindingIdentifiers();
 
   const specifiers = Object.keys(bindingIdentifiers).map(name => {
-    return t.exportSpecifier(t.identifier(name), t.identifier(name));
+    return exportSpecifier(identifier(name), identifier(name));
   });
 
-  const aliasDeclar = t.exportNamedDeclaration(null, specifiers);
+  const aliasDeclar = exportNamedDeclaration(null, specifiers);
 
   exportDeclaration.insertAfter(aliasDeclar);
   exportDeclaration.replaceWith(declaration.node);

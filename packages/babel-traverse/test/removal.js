@@ -1,6 +1,9 @@
-import traverse from "../lib";
 import { parse } from "@babel/parser";
-import generate from "@babel/generator";
+
+import _traverse from "../lib/index.js";
+import _generate from "@babel/generator";
+const traverse = _traverse.default || _traverse;
+const generate = _generate.default || _generate;
 
 function getPath(code) {
   const ast = parse(code);
@@ -41,5 +44,23 @@ describe("removal", function () {
     });
 
     expect(generate(ast).code).toBe("");
+  });
+
+  describe("within an IfStatement", function () {
+    it("does not make consequent null", function () {
+      const rootPath = getPath("if (x) foo(); else bar();");
+      const ifPath = rootPath.get("body.0");
+      ifPath.get("consequent").remove();
+
+      expect(ifPath.get("consequent").type).toBe("BlockStatement");
+    });
+
+    it("completely removes alternate", function () {
+      const rootPath = getPath("if (x) foo(); else bar();");
+      const ifPath = rootPath.get("body.0");
+      ifPath.get("alternate").remove();
+
+      expect(ifPath.get("alternate").node).toBeNull();
+    });
   });
 });

@@ -1,21 +1,20 @@
-/*#__PURE__*/
-babelHelpers.asyncToGenerator(function* () {
-  var _iteratorNormalCompletion = true;
+/*#__PURE__*/babelHelpers.asyncToGenerator(function* () {
+  var _iteratorAbruptCompletion = false;
   var _didIteratorError = false;
-
   var _iteratorError;
-
   try {
-    for (var _iterator = babelHelpers.asyncIterator(y), _step, _value; _step = yield _iterator.next(), _iteratorNormalCompletion = _step.done, _value = yield _step.value, !_iteratorNormalCompletion; _iteratorNormalCompletion = true) {
-      let x = _value;
-      f(x);
+    for (var _iterator = babelHelpers.asyncIterator(y), _step; _iteratorAbruptCompletion = !(_step = yield _iterator.next()).done; _iteratorAbruptCompletion = false) {
+      let x = _step.value;
+      {
+        f(x);
+      }
     }
   } catch (err) {
     _didIteratorError = true;
     _iteratorError = err;
   } finally {
     try {
-      if (!_iteratorNormalCompletion && _iterator.return != null) {
+      if (_iteratorAbruptCompletion && _iterator.return != null) {
         yield _iterator.return();
       }
     } finally {

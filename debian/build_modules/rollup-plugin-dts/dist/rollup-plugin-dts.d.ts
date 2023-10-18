@@ -18,5 +18,4 @@ interface Options {
 }
 declare const plugin: PluginImpl<Options>;
 
-export default plugin;
-export { Options };
+export { Options, plugin as default };

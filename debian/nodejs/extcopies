@@ -1,7 +1,9 @@
+chalk
+@jridgewell/gen-mapping
+@jridgewell/resolve-uri
+@jridgewell/set-array
+@jridgewell/source-map
+@jridgewell/sourcemap-codec
+@jridgewell/trace-mapping
+regenerate-unicode-properties
 regexpu-core
-rollup-plugin-node-polyfills
-to-fast-properties
-@types/lodash
-@types/node
-unicode-match-property-ecmascript
-unicode-match-property-value-ecmascript

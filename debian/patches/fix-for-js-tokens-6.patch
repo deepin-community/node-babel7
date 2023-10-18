@@ -1,0 +1,41 @@
+Description: fix for js-tokens ≥ 6
+Author: Yadd <yadd@debian.org>
+Forwarded: no
+Last-Update: 2022-06-28
+
+--- a/packages/babel-highlight/src/index.ts
++++ b/packages/babel-highlight/src/index.ts
+@@ -167,7 +167,7 @@
+ 
+   // The token here is defined in js-tokens@4. However we don't bother
+   // typing it since the whole block will be removed in Babel 8
+-  const getTokenType = function (token: any, offset: number, text: string) {
++  const getTokenType = function (token: any) {
+     if (token.type === "name") {
+       if (
+         isKeyword(token.value) ||
+@@ -178,8 +178,7 @@
+       }
+ 
+       if (
+-        JSX_TAG.test(token.value) &&
+-        (text[offset - 1] === "<" || text.slice(offset - 2, offset) == "</")
++        JSX_TAG.test(token.value)
+       ) {
+         return "jsxIdentifier";
+       }
+@@ -204,12 +203,9 @@
+   };
+ 
+   tokenize = function* (text: string) {
+-    let match;
+-    while ((match = (jsTokens as any).default.exec(text))) {
+-      const token = (jsTokens as any).matchToToken(match);
+-
++    for (const token of jsTokens(text)) {
+       yield {
+-        type: getTokenType(token, match.index, text),
++        type: getTokenType(token),
+         value: token.value,
+       };
+     }

@@ -1,0 +1,137 @@
+Description: update to 1.0.0-beta.2
+Author: Yadd <yadd@debian.org>
+Forwarded: not-needed
+Last-Update: 2021-12-19
+
+--- a/gensync/README.md
++++ b/gensync/README.md
+@@ -134,7 +134,7 @@
+   Example: `"readFile"`
+ 
+   A string name to apply to the returned function. If no value is provided,
+-  the name of `errback`/`async`/`async` functions will be used, with any
++  the name of `errback`/`async`/`sync` functions will be used, with any
+   `Sync` or `Async` suffix stripped off. If the callback is simply named
+   with ES6 inference (same name as the options property), the name is ignored.
+ 
+--- a/gensync/index.js
++++ b/gensync/index.js
+@@ -33,6 +33,11 @@
+       async: function(args, resolve, reject) {
+         const items = Array.from(args[0]);
+ 
++        if (items.length === 0) {
++          Promise.resolve().then(() => resolve([]));
++          return;
++        }
++
+         let count = 0;
+         const results = items.map(() => undefined);
+         items.forEach((item, i) => {
+@@ -201,7 +206,9 @@
+   return setFunctionMetadata(name, arity, function*(...args) {
+     const resume = yield GENSYNC_START;
+     if (!resume) {
+-      return sync.call(this, args);
++      // Break the tail call to avoid a bug in V8 v6.X with --harmony enabled.
++      const res = sync.call(this, args);
++      return res;
+     }
+ 
+     let result;
+--- a/gensync/index.js.flow
++++ b/gensync/index.js.flow
+@@ -3,22 +3,30 @@
+ opaque type Next = Function | void;
+ opaque type Yield = mixed;
+ 
+-export type Gensync<T> = {
+-  (...args: Array<mixed>): Handler<T>,
+-  sync(...args: Array<mixed>): T,
+-  async(...args: Array<mixed>): Promise<T>,
+-  errback(...args: Array<mixed>): void,
++export type Gensync<Args, Return> = {
++  (...args: Args): Handler<Return>,
++  sync(...args: Args): Return,
++  async(...args: Args): Promise<Return>,
++  // ...args: [...Args, Callback]
++  errback(...args: any[]): void,
+ };
+ 
+-export type Handler<T> = Generator<Yield, T, Next>;
+-export type Options<T> = {
+-  sync: (...args: Array<mixed>) => T,
+-  async: (...args: Array<mixed>) => Promise<T>,
+-  errback: (...args: Array<mixed>) => void,
++export type Handler<Return> = Generator<Yield, Return, Next>;
++export type Options<Args, Return> = {
++  sync(...args: Args): Return,
+   arity?: number,
+   name?: string,
+-};
++} & (
++  | { async?: (...args: Args) => Promise<Return> }
++  // ...args: [...Args, Callback]
++  | { errback(...args: any[]): void }
++);
+ 
+ declare module.exports: {
+-  <T>(Options<T> | Handler<T>): Gensync<T>,
++  <Args, Return>(
++    Options<Args, Return> | ((...args: Args) => Handler<Return>)
++  ): Gensync<Args, Return>,
++
++  all<Return>(Array<Handler<Return>>): Handler<Return[]>,
++  race<Return>(Array<Handler<Return>>): Handler<Return>,
+ };
+--- a/gensync/package.json
++++ b/gensync/package.json
+@@ -1,10 +1,15 @@
+ {
+   "name": "gensync",
+-  "version": "1.0.0-beta.0",
++  "version": "1.0.0-beta.2",
+   "license": "MIT",
+   "description": "Allows users to use generators in order to write common functions that can be both sync or async.",
+   "main": "index.js",
+   "author": "Logan Smyth <loganfsmyth@gmail.com>",
++  "homepage": "https://github.com/loganfsmyth/gensync",
++  "repository": {
++    "type": "git",
++    "url": "https://github.com/loganfsmyth/gensync.git"
++  },
+   "scripts": {
+     "test": "jest"
+   },
+--- a/gensync/test/index.test.js
++++ b/gensync/test/index.test.js
+@@ -181,7 +181,9 @@
+     test("default arity", () => {
+       expect(
+         gensync({
+-          sync: function(a, b, c, d, e, f, g){ throwTestError(); },
++          sync: function(a, b, c, d, e, f, g) {
++            throwTestError();
++          },
+           async: throwTestError,
+         }).length
+       ).toBe(7);
+@@ -443,6 +445,18 @@
+       expectSync: true,
+       syncErrback: false,
+     });
++  });
++
++  test("empty list", async () => {
++    const fn = gensync(function*() {
++      yield* gensync.all([]);
++    });
++
++    await expectResult(fn, undefined, {
++      value: undefined,
++      expectSync: true,
++      syncErrback: false,
++    });
+   });
+ });
+ 

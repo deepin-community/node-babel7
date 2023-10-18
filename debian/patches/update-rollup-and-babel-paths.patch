@@ -1,35 +1,43 @@
 Description: update babel and rollup paths to use Debian packages files
-Author: Xavier Guimard <yadd@debian.org>
+Author: Yadd <yadd@debian.org>
 Forwarded: not-needed
-Last-Update: 2021-01-05
+Last-Update: 2022-11-09
 
---- a/Gulpfile.js
-+++ b/Gulpfile.js
-@@ -240,6 +240,7 @@
-         input,
-         external,
-         onwarn(warning, warn) {
-+          if (warning.code === 'THIS_IS_UNDEFINED') return;
-           if (warning.code !== "CIRCULAR_DEPENDENCY") {
-             warn(warning);
-             // https://github.com/babel/babel/pull/12011#discussion_r540434534
-@@ -272,6 +273,11 @@
-               "packages/babel-preset-env/data/*.js",
-               // Rollup doesn't read export maps, so it loads the cjs fallback
-               "packages/babel-compat-data/*.js",
-+              /nodejs/,
-+              "../**/nodejs/**",
-+              "/usr/share/**",
-+              "/usr/lib/**",
-+              "debian/**",
-             ],
-           }),
-           rollupJson(),
+--- a/Gulpfile.mjs
++++ b/Gulpfile.mjs
+@@ -360,6 +360,7 @@
+           preserveSymlinks: true,
+           onwarn(warning, warn) {
+             switch (warning.code) {
++              case "THIS_IS_UNDEFINED":
+               case "CIRCULAR_DEPENDENCY":
+               case "SOURCEMAP_ERROR": // Rollup warns about the babel-polyfills source maps
+                 return;
+@@ -412,6 +413,11 @@
+                 // Rollup doesn't read export maps, so it loads the cjs fallback
+                 "packages/babel-compat-data/*.js",
+                 "packages/*/src/**/*.cjs",
++                /nodejs/,
++                "../**/nodejs/**",
++                "/usr/share/**",
++                "/usr/lib/**",
++                "debian/**",
+               ],
+               dynamicRequireTargets: [
+                 // https://github.com/mathiasbynens/regexpu-core/blob/ffd8fff2e31f4597f6fdfee75d5ac1c5c8111ec3/rewrite-pattern.js#L48
+@@ -716,6 +722,7 @@
+   const bundle = await rollup({
+     input,
+     onwarn(warning, warn) {
++      if (warning.code === 'THIS_IS_UNDEFINED') return;
+       if (warning.code === "CIRCULAR_DEPENDENCY") return;
+       warn(warning);
+     },
 --- a/babel.config.js
 +++ b/babel.config.js
-@@ -36,6 +36,10 @@
+@@ -78,6 +78,10 @@
+     "packages/*/test",
      "codemods/*/test",
-     "eslint/*/src",
      "eslint/*/test",
 +    "../**/nodejs/*/",
 +    "/usr/share/nodejs/*/",
@@ -37,4 +45,4 @@ Last-Update: 2021-01-05
 +    "/usr/share/javascript/*/",
    ];
  
-   switch (env) {
+   const lazyRequireSources = [

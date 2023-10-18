@@ -3,9 +3,11 @@
 
 interface BaseComment {
   value: string;
-  start: number;
-  end: number;
-  loc: SourceLocation;
+  start?: number;
+  end?: number;
+  loc?: SourceLocation;
+  // generator will skip the comment if ignore is true
+  ignore?: boolean;
   type: "CommentBlock" | "CommentLine";
 }
 
@@ -32,13 +34,14 @@ export interface SourceLocation {
 }
 
 interface BaseNode {
-  leadingComments: ReadonlyArray<Comment> | null;
-  innerComments: ReadonlyArray<Comment> | null;
-  trailingComments: ReadonlyArray<Comment> | null;
-  start: number | null;
-  end: number | null;
-  loc: SourceLocation | null;
   type: Node["type"];
+  leadingComments?: Comment[] | null;
+  innerComments?: Comment[] | null;
+  trailingComments?: Comment[] | null;
+  start?: number | null;
+  end?: number | null;
+  loc?: SourceLocation | null;
+  range?: [number, number];
   extra?: Record<string, unknown>;
 }
 
@@ -55,11 +58,8 @@ export type Node =
   | AssignmentPattern
   | AwaitExpression
   | BigIntLiteral
-  | Binary
   | BinaryExpression
   | BindExpression
-  | Block
-  | BlockParent
   | BlockStatement
   | BooleanLiteral
   | BooleanLiteralTypeAnnotation
@@ -67,7 +67,7 @@ export type Node =
   | BreakStatement
   | CallExpression
   | CatchClause
-  | Class
+  | ClassAccessorProperty
   | ClassBody
   | ClassDeclaration
   | ClassExpression
@@ -76,13 +76,10 @@ export type Node =
   | ClassPrivateMethod
   | ClassPrivateProperty
   | ClassProperty
-  | CompletionStatement
-  | Conditional
   | ConditionalExpression
   | ContinueStatement
   | DebuggerStatement
   | DecimalLiteral
-  | Declaration
   | DeclareClass
   | DeclareExportAllDeclaration
   | DeclareExportDeclaration
@@ -101,12 +98,10 @@ export type Node =
   | DoWhileStatement
   | EmptyStatement
   | EmptyTypeAnnotation
-  | EnumBody
   | EnumBooleanBody
   | EnumBooleanMember
   | EnumDeclaration
   | EnumDefaultedMember
-  | EnumMember
   | EnumNumberBody
   | EnumNumberMember
   | EnumStringBody
@@ -114,49 +109,36 @@ export type Node =
   | EnumSymbolBody
   | ExistsTypeAnnotation
   | ExportAllDeclaration
-  | ExportDeclaration
   | ExportDefaultDeclaration
   | ExportDefaultSpecifier
   | ExportNamedDeclaration
   | ExportNamespaceSpecifier
   | ExportSpecifier
-  | Expression
   | ExpressionStatement
-  | ExpressionWrapper
   | File
-  | Flow
-  | FlowBaseAnnotation
-  | FlowDeclaration
-  | FlowPredicate
-  | FlowType
-  | For
   | ForInStatement
   | ForOfStatement
   | ForStatement
-  | ForXStatement
-  | Function
   | FunctionDeclaration
   | FunctionExpression
-  | FunctionParent
   | FunctionTypeAnnotation
   | FunctionTypeParam
   | GenericTypeAnnotation
   | Identifier
   | IfStatement
-  | Immutable
   | Import
   | ImportAttribute
   | ImportDeclaration
   | ImportDefaultSpecifier
   | ImportNamespaceSpecifier
   | ImportSpecifier
+  | IndexedAccessType
   | InferredPredicate
   | InterfaceDeclaration
   | InterfaceExtends
   | InterfaceTypeAnnotation
   | InterpreterDirective
   | IntersectionTypeAnnotation
-  | JSX
   | JSXAttribute
   | JSXClosingElement
   | JSXClosingFragment
@@ -172,17 +154,12 @@ export type Node =
   | JSXSpreadAttribute
   | JSXSpreadChild
   | JSXText
-  | LVal
   | LabeledStatement
-  | Literal
   | LogicalExpression
-  | Loop
   | MemberExpression
   | MetaProperty
-  | Method
   | MixedTypeAnnotation
-  | ModuleDeclaration
-  | ModuleSpecifier
+  | ModuleExpression
   | NewExpression
   | Noop
   | NullLiteral
@@ -193,7 +170,6 @@ export type Node =
   | NumberTypeAnnotation
   | NumericLiteral
   | ObjectExpression
-  | ObjectMember
   | ObjectMethod
   | ObjectPattern
   | ObjectProperty
@@ -205,19 +181,15 @@ export type Node =
   | ObjectTypeSpreadProperty
   | OpaqueType
   | OptionalCallExpression
+  | OptionalIndexedAccessType
   | OptionalMemberExpression
   | ParenthesizedExpression
-  | Pattern
-  | PatternLike
   | PipelineBareFunction
   | PipelinePrimaryTopicReference
   | PipelineTopicExpression
   | Placeholder
-  | Private
   | PrivateName
   | Program
-  | Property
-  | Pureish
   | QualifiedTypeIdentifier
   | RecordExpression
   | RegExpLiteral
@@ -225,11 +197,9 @@ export type Node =
   | RestElement
   | RestProperty
   | ReturnStatement
-  | Scopable
   | SequenceExpression
   | SpreadElement
   | SpreadProperty
-  | Statement
   | StaticBlock
   | StringLiteral
   | StringLiteralTypeAnnotation
@@ -241,7 +211,6 @@ export type Node =
   | TSAnyKeyword
   | TSArrayType
   | TSAsExpression
-  | TSBaseType
   | TSBigIntKeyword
   | TSBooleanKeyword
   | TSCallSignatureDeclaration
@@ -250,7 +219,6 @@ export type Node =
   | TSConstructorType
   | TSDeclareFunction
   | TSDeclareMethod
-  | TSEntityName
   | TSEnumDeclaration
   | TSEnumMember
   | TSExportAssignment
@@ -262,6 +230,7 @@ export type Node =
   | TSIndexSignature
   | TSIndexedAccessType
   | TSInferType
+  | TSInstantiationExpression
   | TSInterfaceBody
   | TSInterfaceDeclaration
   | TSIntersectionType
@@ -284,15 +253,14 @@ export type Node =
   | TSPropertySignature
   | TSQualifiedName
   | TSRestType
+  | TSSatisfiesExpression
   | TSStringKeyword
   | TSSymbolKeyword
   | TSThisType
   | TSTupleType
-  | TSType
   | TSTypeAliasDeclaration
   | TSTypeAnnotation
   | TSTypeAssertion
-  | TSTypeElement
   | TSTypeLiteral
   | TSTypeOperator
   | TSTypeParameter
@@ -308,10 +276,10 @@ export type Node =
   | TaggedTemplateExpression
   | TemplateElement
   | TemplateLiteral
-  | Terminatorless
   | ThisExpression
   | ThisTypeAnnotation
   | ThrowStatement
+  | TopicReference
   | TryStatement
   | TupleExpression
   | TupleTypeAnnotation
@@ -323,16 +291,13 @@ export type Node =
   | TypeParameterInstantiation
   | TypeofTypeAnnotation
   | UnaryExpression
-  | UnaryLike
   | UnionTypeAnnotation
   | UpdateExpression
-  | UserWhitespacable
   | V8IntrinsicIdentifier
   | VariableDeclaration
   | VariableDeclarator
   | Variance
   | VoidTypeAnnotation
-  | While
   | WhileStatement
   | WithStatement
   | YieldExpression;
@@ -373,7 +338,8 @@ export interface BinaryExpression extends BaseNode {
     | ">"
     | "<"
     | ">="
-    | "<=";
+    | "<="
+    | "|>";
   left: Expression | PrivateName;
   right: Expression;
 }
@@ -406,7 +372,7 @@ export interface BreakStatement extends BaseNode {
 
 export interface CallExpression extends BaseNode {
   type: "CallExpression";
-  callee: Expression | V8IntrinsicIdentifier;
+  callee: Expression | Super | V8IntrinsicIdentifier;
   arguments: Array<
     Expression | SpreadElement | JSXNamespacedName | ArgumentPlaceholder
   >;
@@ -477,11 +443,12 @@ export interface ForStatement extends BaseNode {
 export interface FunctionDeclaration extends BaseNode {
   type: "FunctionDeclaration";
   id?: Identifier | null;
-  params: Array<Identifier | Pattern | RestElement | TSParameterProperty>;
+  params: Array<Identifier | Pattern | RestElement>;
   body: BlockStatement;
-  generator?: boolean;
-  async?: boolean;
+  generator: boolean;
+  async: boolean;
   declare?: boolean | null;
+  predicate?: DeclaredPredicate | InferredPredicate | null;
   returnType?: TypeAnnotation | TSTypeAnnotation | Noop | null;
   typeParameters?:
     | TypeParameterDeclaration
@@ -493,10 +460,11 @@ export interface FunctionDeclaration extends BaseNode {
 export interface FunctionExpression extends BaseNode {
   type: "FunctionExpression";
   id?: Identifier | null;
-  params: Array<Identifier | Pattern | RestElement | TSParameterProperty>;
+  params: Array<Identifier | Pattern | RestElement>;
   body: BlockStatement;
-  generator?: boolean;
-  async?: boolean;
+  generator: boolean;
+  async: boolean;
+  predicate?: DeclaredPredicate | InferredPredicate | null;
   returnType?: TypeAnnotation | TSTypeAnnotation | Noop | null;
   typeParameters?:
     | TypeParameterDeclaration
@@ -577,7 +545,7 @@ export interface LogicalExpression extends BaseNode {
 
 export interface MemberExpression extends BaseNode {
   type: "MemberExpression";
-  object: Expression;
+  object: Expression | Super;
   property: Expression | Identifier | PrivateName;
   computed: boolean;
   optional?: true | false | null;
@@ -585,7 +553,7 @@ export interface MemberExpression extends BaseNode {
 
 export interface NewExpression extends BaseNode {
   type: "NewExpression";
-  callee: Expression | V8IntrinsicIdentifier;
+  callee: Expression | Super | V8IntrinsicIdentifier;
   arguments: Array<
     Expression | SpreadElement | JSXNamespacedName | ArgumentPlaceholder
   >;
@@ -611,12 +579,12 @@ export interface ObjectExpression extends BaseNode {
 export interface ObjectMethod extends BaseNode {
   type: "ObjectMethod";
   kind: "method" | "get" | "set";
-  key: Expression | Identifier | StringLiteral | NumericLiteral;
-  params: Array<Identifier | Pattern | RestElement | TSParameterProperty>;
+  key: Expression | Identifier | StringLiteral | NumericLiteral | BigIntLiteral;
+  params: Array<Identifier | Pattern | RestElement>;
   body: BlockStatement;
   computed: boolean;
-  generator?: boolean;
-  async?: boolean;
+  generator: boolean;
+  async: boolean;
   decorators?: Array<Decorator> | null;
   returnType?: TypeAnnotation | TSTypeAnnotation | Noop | null;
   typeParameters?:
@@ -628,7 +596,14 @@ export interface ObjectMethod extends BaseNode {
 
 export interface ObjectProperty extends BaseNode {
   type: "ObjectProperty";
-  key: Expression | Identifier | StringLiteral | NumericLiteral;
+  key:
+    | Expression
+    | Identifier
+    | StringLiteral
+    | NumericLiteral
+    | BigIntLiteral
+    | DecimalLiteral
+    | PrivateName;
   value: Expression | PatternLike;
   computed: boolean;
   shorthand: boolean;
@@ -639,6 +614,7 @@ export interface RestElement extends BaseNode {
   type: "RestElement";
   argument: LVal;
   decorators?: Array<Decorator> | null;
+  optional?: boolean | null;
   typeAnnotation?: TypeAnnotation | TSTypeAnnotation | Noop | null;
 }
 
@@ -649,6 +625,7 @@ export interface RestProperty extends BaseNode {
   type: "RestProperty";
   argument: LVal;
   decorators?: Array<Decorator> | null;
+  optional?: boolean | null;
   typeAnnotation?: TypeAnnotation | TSTypeAnnotation | Noop | null;
 }
 
@@ -711,7 +688,7 @@ export interface UpdateExpression extends BaseNode {
 
 export interface VariableDeclaration extends BaseNode {
   type: "VariableDeclaration";
-  kind: "var" | "let" | "const";
+  kind: "var" | "let" | "const" | "using";
   declarations: Array<VariableDeclarator>;
   declare?: boolean | null;
 }
@@ -737,7 +714,15 @@ export interface WithStatement extends BaseNode {
 
 export interface AssignmentPattern extends BaseNode {
   type: "AssignmentPattern";
-  left: Identifier | ObjectPattern | ArrayPattern | MemberExpression;
+  left:
+    | Identifier
+    | ObjectPattern
+    | ArrayPattern
+    | MemberExpression
+    | TSAsExpression
+    | TSSatisfiesExpression
+    | TSTypeAssertion
+    | TSNonNullExpression;
   right: Expression;
   decorators?: Array<Decorator> | null;
   typeAnnotation?: TypeAnnotation | TSTypeAnnotation | Noop | null;
@@ -745,18 +730,20 @@ export interface AssignmentPattern extends BaseNode {
 
 export interface ArrayPattern extends BaseNode {
   type: "ArrayPattern";
-  elements: Array<null | PatternLike>;
+  elements: Array<null | PatternLike | LVal>;
   decorators?: Array<Decorator> | null;
+  optional?: boolean | null;
   typeAnnotation?: TypeAnnotation | TSTypeAnnotation | Noop | null;
 }
 
 export interface ArrowFunctionExpression extends BaseNode {
   type: "ArrowFunctionExpression";
-  params: Array<Identifier | Pattern | RestElement | TSParameterProperty>;
+  params: Array<Identifier | Pattern | RestElement>;
   body: BlockStatement | Expression;
-  async?: boolean;
+  async: boolean;
   expression: boolean;
   generator?: boolean;
+  predicate?: DeclaredPredicate | InferredPredicate | null;
   returnType?: TypeAnnotation | TSTypeAnnotation | Noop | null;
   typeParameters?:
     | TypeParameterDeclaration
@@ -772,8 +759,10 @@ export interface ClassBody extends BaseNode {
     | ClassPrivateMethod
     | ClassProperty
     | ClassPrivateProperty
+    | ClassAccessorProperty
     | TSDeclareMethod
     | TSIndexSignature
+    | StaticBlock
   >;
 }
 
@@ -820,17 +809,18 @@ export interface ClassDeclaration extends BaseNode {
 export interface ExportAllDeclaration extends BaseNode {
   type: "ExportAllDeclaration";
   source: StringLiteral;
-  assertions?: ImportAttribute | null;
+  assertions?: Array<ImportAttribute> | null;
   exportKind?: "type" | "value" | null;
 }
 
 export interface ExportDefaultDeclaration extends BaseNode {
   type: "ExportDefaultDeclaration";
   declaration:
-    | FunctionDeclaration
     | TSDeclareFunction
+    | FunctionDeclaration
     | ClassDeclaration
     | Expression;
+  exportKind?: "value" | null;
 }
 
 export interface ExportNamedDeclaration extends BaseNode {
@@ -840,7 +830,7 @@ export interface ExportNamedDeclaration extends BaseNode {
     ExportSpecifier | ExportDefaultSpecifier | ExportNamespaceSpecifier
   >;
   source?: StringLiteral | null;
-  assertions?: ImportAttribute | null;
+  assertions?: Array<ImportAttribute> | null;
   exportKind?: "type" | "value" | null;
 }
 
@@ -848,6 +838,7 @@ export interface ExportSpecifier extends BaseNode {
   type: "ExportSpecifier";
   local: Identifier;
   exported: Identifier | StringLiteral;
+  exportKind?: "type" | "value" | null;
 }
 
 export interface ForOfStatement extends BaseNode {
@@ -864,8 +855,9 @@ export interface ImportDeclaration extends BaseNode {
     ImportSpecifier | ImportDefaultSpecifier | ImportNamespaceSpecifier
   >;
   source: StringLiteral;
-  assertions?: ImportAttribute | null;
+  assertions?: Array<ImportAttribute> | null;
   importKind?: "type" | "typeof" | "value" | null;
+  module?: boolean | null;
 }
 
 export interface ImportDefaultSpecifier extends BaseNode {
@@ -882,7 +874,7 @@ export interface ImportSpecifier extends BaseNode {
   type: "ImportSpecifier";
   local: Identifier;
   imported: Identifier | StringLiteral;
-  importKind?: "type" | "typeof" | null;
+  importKind?: "type" | "typeof" | "value" | null;
 }
 
 export interface MetaProperty extends BaseNode {
@@ -893,19 +885,20 @@ export interface MetaProperty extends BaseNode {
 
 export interface ClassMethod extends BaseNode {
   type: "ClassMethod";
-  kind?: "get" | "set" | "method" | "constructor";
-  key: Identifier | StringLiteral | NumericLiteral | Expression;
+  kind: "get" | "set" | "method" | "constructor";
+  key: Identifier | StringLiteral | NumericLiteral | BigIntLiteral | Expression;
   params: Array<Identifier | Pattern | RestElement | TSParameterProperty>;
   body: BlockStatement;
-  computed?: boolean;
-  static?: boolean;
-  generator?: boolean;
-  async?: boolean;
+  computed: boolean;
+  static: boolean;
+  generator: boolean;
+  async: boolean;
   abstract?: boolean | null;
   access?: "public" | "private" | "protected" | null;
   accessibility?: "public" | "private" | "protected" | null;
   decorators?: Array<Decorator> | null;
   optional?: boolean | null;
+  override?: boolean;
   returnType?: TypeAnnotation | TSTypeAnnotation | Noop | null;
   typeParameters?:
     | TypeParameterDeclaration
@@ -1004,6 +997,94 @@ export interface OptionalCallExpression extends BaseNode {
   typeParameters?: TSTypeParameterInstantiation | null;
 }
 
+export interface ClassProperty extends BaseNode {
+  type: "ClassProperty";
+  key: Identifier | StringLiteral | NumericLiteral | BigIntLiteral | Expression;
+  value?: Expression | null;
+  typeAnnotation?: TypeAnnotation | TSTypeAnnotation | Noop | null;
+  decorators?: Array<Decorator> | null;
+  computed: boolean;
+  static: boolean;
+  abstract?: boolean | null;
+  accessibility?: "public" | "private" | "protected" | null;
+  declare?: boolean | null;
+  definite?: boolean | null;
+  optional?: boolean | null;
+  override?: boolean;
+  readonly?: boolean | null;
+  variance?: Variance | null;
+}
+
+export interface ClassAccessorProperty extends BaseNode {
+  type: "ClassAccessorProperty";
+  key:
+    | Identifier
+    | StringLiteral
+    | NumericLiteral
+    | BigIntLiteral
+    | Expression
+    | PrivateName;
+  value?: Expression | null;
+  typeAnnotation?: TypeAnnotation | TSTypeAnnotation | Noop | null;
+  decorators?: Array<Decorator> | null;
+  computed: boolean;
+  static: boolean;
+  abstract?: boolean | null;
+  accessibility?: "public" | "private" | "protected" | null;
+  declare?: boolean | null;
+  definite?: boolean | null;
+  optional?: boolean | null;
+  override?: boolean;
+  readonly?: boolean | null;
+  variance?: Variance | null;
+}
+
+export interface ClassPrivateProperty extends BaseNode {
+  type: "ClassPrivateProperty";
+  key: PrivateName;
+  value?: Expression | null;
+  decorators?: Array<Decorator> | null;
+  static: boolean;
+  definite?: boolean | null;
+  readonly?: boolean | null;
+  typeAnnotation?: TypeAnnotation | TSTypeAnnotation | Noop | null;
+  variance?: Variance | null;
+}
+
+export interface ClassPrivateMethod extends BaseNode {
+  type: "ClassPrivateMethod";
+  kind: "get" | "set" | "method";
+  key: PrivateName;
+  params: Array<Identifier | Pattern | RestElement | TSParameterProperty>;
+  body: BlockStatement;
+  static: boolean;
+  abstract?: boolean | null;
+  access?: "public" | "private" | "protected" | null;
+  accessibility?: "public" | "private" | "protected" | null;
+  async?: boolean;
+  computed?: boolean;
+  decorators?: Array<Decorator> | null;
+  generator?: boolean;
+  optional?: boolean | null;
+  override?: boolean;
+  returnType?: TypeAnnotation | TSTypeAnnotation | Noop | null;
+  typeParameters?:
+    | TypeParameterDeclaration
+    | TSTypeParameterDeclaration
+    | Noop
+    | null;
+}
+
+export interface PrivateName extends BaseNode {
+  type: "PrivateName";
+  id: Identifier;
+}
+
+export interface StaticBlock extends BaseNode {
+  type: "StaticBlock";
+  body: Array<Statement>;
+}
+
 export interface AnyTypeAnnotation extends BaseNode {
   type: "AnyTypeAnnotation";
 }
@@ -1082,6 +1163,7 @@ export interface DeclareOpaqueType extends BaseNode {
   id: Identifier;
   typeParameters?: TypeParameterDeclaration | null;
   supertype?: FlowType | null;
+  impltype?: FlowType | null;
 }
 
 export interface DeclareVariable extends BaseNode {
@@ -1118,6 +1200,7 @@ export interface FunctionTypeAnnotation extends BaseNode {
   params: Array<FunctionTypeParam>;
   rest?: FunctionTypeParam | null;
   returnType: FlowType;
+  this?: FunctionTypeParam | null;
 }
 
 export interface FunctionTypeParam extends BaseNode {
@@ -1189,9 +1272,9 @@ export interface NumberTypeAnnotation extends BaseNode {
 export interface ObjectTypeAnnotation extends BaseNode {
   type: "ObjectTypeAnnotation";
   properties: Array<ObjectTypeProperty | ObjectTypeSpreadProperty>;
-  indexers?: Array<ObjectTypeIndexer> | null;
-  callProperties?: Array<ObjectTypeCallProperty> | null;
-  internalSlots?: Array<ObjectTypeInternalSlot> | null;
+  indexers?: Array<ObjectTypeIndexer>;
+  callProperties?: Array<ObjectTypeCallProperty>;
+  internalSlots?: Array<ObjectTypeInternalSlot>;
   exact: boolean;
   inexact?: boolean | null;
 }
@@ -1338,23 +1421,27 @@ export interface EnumBooleanBody extends BaseNode {
   type: "EnumBooleanBody";
   members: Array<EnumBooleanMember>;
   explicitType: boolean;
+  hasUnknownMembers: boolean;
 }
 
 export interface EnumNumberBody extends BaseNode {
   type: "EnumNumberBody";
   members: Array<EnumNumberMember>;
   explicitType: boolean;
+  hasUnknownMembers: boolean;
 }
 
 export interface EnumStringBody extends BaseNode {
   type: "EnumStringBody";
   members: Array<EnumStringMember | EnumDefaultedMember>;
   explicitType: boolean;
+  hasUnknownMembers: boolean;
 }
 
 export interface EnumSymbolBody extends BaseNode {
   type: "EnumSymbolBody";
   members: Array<EnumDefaultedMember>;
+  hasUnknownMembers: boolean;
 }
 
 export interface EnumBooleanMember extends BaseNode {
@@ -1378,6 +1465,19 @@ export interface EnumStringMember extends BaseNode {
 export interface EnumDefaultedMember extends BaseNode {
   type: "EnumDefaultedMember";
   id: Identifier;
+}
+
+export interface IndexedAccessType extends BaseNode {
+  type: "IndexedAccessType";
+  objectType: FlowType;
+  indexType: FlowType;
+}
+
+export interface OptionalIndexedAccessType extends BaseNode {
+  type: "OptionalIndexedAccessType";
+  objectType: FlowType;
+  indexType: FlowType;
+  optional: boolean;
 }
 
 export interface JSXAttribute extends BaseNode {
@@ -1508,68 +1608,6 @@ export interface BindExpression extends BaseNode {
   callee: Expression;
 }
 
-export interface ClassProperty extends BaseNode {
-  type: "ClassProperty";
-  key: Identifier | StringLiteral | NumericLiteral | Expression;
-  value?: Expression | null;
-  typeAnnotation?: TypeAnnotation | TSTypeAnnotation | Noop | null;
-  decorators?: Array<Decorator> | null;
-  computed?: boolean;
-  static?: boolean;
-  abstract?: boolean | null;
-  accessibility?: "public" | "private" | "protected" | null;
-  declare?: boolean | null;
-  definite?: boolean | null;
-  optional?: boolean | null;
-  readonly?: boolean | null;
-}
-
-export interface PipelineTopicExpression extends BaseNode {
-  type: "PipelineTopicExpression";
-  expression: Expression;
-}
-
-export interface PipelineBareFunction extends BaseNode {
-  type: "PipelineBareFunction";
-  callee: Expression;
-}
-
-export interface PipelinePrimaryTopicReference extends BaseNode {
-  type: "PipelinePrimaryTopicReference";
-}
-
-export interface ClassPrivateProperty extends BaseNode {
-  type: "ClassPrivateProperty";
-  key: PrivateName;
-  value?: Expression | null;
-  decorators?: Array<Decorator> | null;
-  static: any;
-  typeAnnotation?: TypeAnnotation | TSTypeAnnotation | Noop | null;
-}
-
-export interface ClassPrivateMethod extends BaseNode {
-  type: "ClassPrivateMethod";
-  kind?: "get" | "set" | "method" | "constructor";
-  key: PrivateName;
-  params: Array<Identifier | Pattern | RestElement | TSParameterProperty>;
-  body: BlockStatement;
-  static?: boolean;
-  abstract?: boolean | null;
-  access?: "public" | "private" | "protected" | null;
-  accessibility?: "public" | "private" | "protected" | null;
-  async?: boolean;
-  computed?: boolean;
-  decorators?: Array<Decorator> | null;
-  generator?: boolean;
-  optional?: boolean | null;
-  returnType?: TypeAnnotation | TSTypeAnnotation | Noop | null;
-  typeParameters?:
-    | TypeParameterDeclaration
-    | TSTypeParameterDeclaration
-    | Noop
-    | null;
-}
-
 export interface ImportAttribute extends BaseNode {
   type: "ImportAttribute";
   key: Identifier | StringLiteral;
@@ -1584,16 +1622,12 @@ export interface Decorator extends BaseNode {
 export interface DoExpression extends BaseNode {
   type: "DoExpression";
   body: BlockStatement;
+  async: boolean;
 }
 
 export interface ExportDefaultSpecifier extends BaseNode {
   type: "ExportDefaultSpecifier";
   exported: Identifier;
-}
-
-export interface PrivateName extends BaseNode {
-  type: "PrivateName";
-  id: Identifier;
 }
 
 export interface RecordExpression extends BaseNode {
@@ -1611,15 +1645,35 @@ export interface DecimalLiteral extends BaseNode {
   value: string;
 }
 
-export interface StaticBlock extends BaseNode {
-  type: "StaticBlock";
-  body: Array<Statement>;
+export interface ModuleExpression extends BaseNode {
+  type: "ModuleExpression";
+  body: Program;
+}
+
+export interface TopicReference extends BaseNode {
+  type: "TopicReference";
+}
+
+export interface PipelineTopicExpression extends BaseNode {
+  type: "PipelineTopicExpression";
+  expression: Expression;
+}
+
+export interface PipelineBareFunction extends BaseNode {
+  type: "PipelineBareFunction";
+  callee: Expression;
+}
+
+export interface PipelinePrimaryTopicReference extends BaseNode {
+  type: "PipelinePrimaryTopicReference";
 }
 
 export interface TSParameterProperty extends BaseNode {
   type: "TSParameterProperty";
   parameter: Identifier | AssignmentPattern;
   accessibility?: "public" | "private" | "protected" | null;
+  decorators?: Array<Decorator> | null;
+  override?: boolean | null;
   readonly?: boolean | null;
 }
 
@@ -1627,7 +1681,7 @@ export interface TSDeclareFunction extends BaseNode {
   type: "TSDeclareFunction";
   id?: Identifier | null;
   typeParameters?: TSTypeParameterDeclaration | Noop | null;
-  params: Array<Identifier | Pattern | RestElement | TSParameterProperty>;
+  params: Array<Identifier | Pattern | RestElement>;
   returnType?: TSTypeAnnotation | Noop | null;
   async?: boolean;
   declare?: boolean | null;
@@ -1637,7 +1691,7 @@ export interface TSDeclareFunction extends BaseNode {
 export interface TSDeclareMethod extends BaseNode {
   type: "TSDeclareMethod";
   decorators?: Array<Decorator> | null;
-  key: Identifier | StringLiteral | NumericLiteral | Expression;
+  key: Identifier | StringLiteral | NumericLiteral | BigIntLiteral | Expression;
   typeParameters?: TSTypeParameterDeclaration | Noop | null;
   params: Array<Identifier | Pattern | RestElement | TSParameterProperty>;
   returnType?: TSTypeAnnotation | Noop | null;
@@ -1649,6 +1703,7 @@ export interface TSDeclareMethod extends BaseNode {
   generator?: boolean;
   kind?: "get" | "set" | "method" | "constructor";
   optional?: boolean | null;
+  override?: boolean;
   static?: boolean;
 }
 
@@ -1677,7 +1732,8 @@ export interface TSPropertySignature extends BaseNode {
   key: Expression;
   typeAnnotation?: TSTypeAnnotation | null;
   initializer?: Expression | null;
-  computed?: boolean | null;
+  computed?: boolean;
+  kind: "get" | "set";
   optional?: boolean | null;
   readonly?: boolean | null;
 }
@@ -1688,7 +1744,8 @@ export interface TSMethodSignature extends BaseNode {
   typeParameters?: TSTypeParameterDeclaration | null;
   parameters: Array<Identifier | RestElement>;
   typeAnnotation?: TSTypeAnnotation | null;
-  computed?: boolean | null;
+  computed?: boolean;
+  kind: "method" | "get" | "set";
   optional?: boolean | null;
 }
 
@@ -1697,6 +1754,7 @@ export interface TSIndexSignature extends BaseNode {
   parameters: Array<Identifier>;
   typeAnnotation?: TSTypeAnnotation | null;
   readonly?: boolean | null;
+  static?: boolean | null;
 }
 
 export interface TSAnyKeyword extends BaseNode {
@@ -1767,6 +1825,7 @@ export interface TSConstructorType extends BaseNode {
   typeParameters?: TSTypeParameterDeclaration | null;
   parameters: Array<Identifier | RestElement>;
   typeAnnotation?: TSTypeAnnotation | null;
+  abstract?: boolean | null;
 }
 
 export interface TSTypeReference extends BaseNode {
@@ -1785,6 +1844,7 @@ export interface TSTypePredicate extends BaseNode {
 export interface TSTypeQuery extends BaseNode {
   type: "TSTypeQuery";
   exprName: TSEntityName | TSImportType;
+  typeParameters?: TSTypeParameterInstantiation | null;
 }
 
 export interface TSTypeLiteral extends BaseNode {
@@ -1864,13 +1924,19 @@ export interface TSMappedType extends BaseNode {
   typeParameter: TSTypeParameter;
   typeAnnotation?: TSType | null;
   nameType?: TSType | null;
-  optional?: boolean | null;
-  readonly?: boolean | null;
+  optional?: true | false | "+" | "-" | null;
+  readonly?: true | false | "+" | "-" | null;
 }
 
 export interface TSLiteralType extends BaseNode {
   type: "TSLiteralType";
-  literal: NumericLiteral | StringLiteral | BooleanLiteral | BigIntLiteral;
+  literal:
+    | NumericLiteral
+    | StringLiteral
+    | BooleanLiteral
+    | BigIntLiteral
+    | TemplateLiteral
+    | UnaryExpression;
 }
 
 export interface TSExpressionWithTypeArguments extends BaseNode {
@@ -1901,8 +1967,20 @@ export interface TSTypeAliasDeclaration extends BaseNode {
   declare?: boolean | null;
 }
 
+export interface TSInstantiationExpression extends BaseNode {
+  type: "TSInstantiationExpression";
+  expression: Expression;
+  typeParameters?: TSTypeParameterInstantiation | null;
+}
+
 export interface TSAsExpression extends BaseNode {
   type: "TSAsExpression";
+  expression: Expression;
+  typeAnnotation: TSType;
+}
+
+export interface TSSatisfiesExpression extends BaseNode {
+  type: "TSSatisfiesExpression";
   expression: Expression;
   typeAnnotation: TSType;
 }
@@ -1952,6 +2030,7 @@ export interface TSImportEqualsDeclaration extends BaseNode {
   type: "TSImportEqualsDeclaration";
   id: Identifier;
   moduleReference: TSEntityName | TSExternalModuleReference;
+  importKind?: "type" | "value" | null;
   isExport: boolean;
 }
 
@@ -1995,8 +2074,98 @@ export interface TSTypeParameter extends BaseNode {
   constraint?: TSType | null;
   default?: TSType | null;
   name: string;
+  in?: boolean | null;
+  out?: boolean | null;
 }
 
+export type Standardized =
+  | ArrayExpression
+  | AssignmentExpression
+  | BinaryExpression
+  | InterpreterDirective
+  | Directive
+  | DirectiveLiteral
+  | BlockStatement
+  | BreakStatement
+  | CallExpression
+  | CatchClause
+  | ConditionalExpression
+  | ContinueStatement
+  | DebuggerStatement
+  | DoWhileStatement
+  | EmptyStatement
+  | ExpressionStatement
+  | File
+  | ForInStatement
+  | ForStatement
+  | FunctionDeclaration
+  | FunctionExpression
+  | Identifier
+  | IfStatement
+  | LabeledStatement
+  | StringLiteral
+  | NumericLiteral
+  | NullLiteral
+  | BooleanLiteral
+  | RegExpLiteral
+  | LogicalExpression
+  | MemberExpression
+  | NewExpression
+  | Program
+  | ObjectExpression
+  | ObjectMethod
+  | ObjectProperty
+  | RestElement
+  | ReturnStatement
+  | SequenceExpression
+  | ParenthesizedExpression
+  | SwitchCase
+  | SwitchStatement
+  | ThisExpression
+  | ThrowStatement
+  | TryStatement
+  | UnaryExpression
+  | UpdateExpression
+  | VariableDeclaration
+  | VariableDeclarator
+  | WhileStatement
+  | WithStatement
+  | AssignmentPattern
+  | ArrayPattern
+  | ArrowFunctionExpression
+  | ClassBody
+  | ClassExpression
+  | ClassDeclaration
+  | ExportAllDeclaration
+  | ExportDefaultDeclaration
+  | ExportNamedDeclaration
+  | ExportSpecifier
+  | ForOfStatement
+  | ImportDeclaration
+  | ImportDefaultSpecifier
+  | ImportNamespaceSpecifier
+  | ImportSpecifier
+  | MetaProperty
+  | ClassMethod
+  | ObjectPattern
+  | SpreadElement
+  | Super
+  | TaggedTemplateExpression
+  | TemplateElement
+  | TemplateLiteral
+  | YieldExpression
+  | AwaitExpression
+  | Import
+  | BigIntLiteral
+  | ExportNamespaceSpecifier
+  | OptionalMemberExpression
+  | OptionalCallExpression
+  | ClassProperty
+  | ClassAccessorProperty
+  | ClassPrivateProperty
+  | ClassPrivateMethod
+  | PrivateName
+  | StaticBlock;
 export type Expression =
   | ArrayExpression
   | AssignmentExpression
@@ -2035,12 +2204,18 @@ export type Expression =
   | JSXElement
   | JSXFragment
   | BindExpression
-  | PipelinePrimaryTopicReference
   | DoExpression
   | RecordExpression
   | TupleExpression
   | DecimalLiteral
+  | ModuleExpression
+  | TopicReference
+  | PipelineTopicExpression
+  | PipelineBareFunction
+  | PipelinePrimaryTopicReference
+  | TSInstantiationExpression
   | TSAsExpression
+  | TSSatisfiesExpression
   | TSTypeAssertion
   | TSNonNullExpression;
 export type Binary = BinaryExpression | LogicalExpression;
@@ -2170,7 +2345,9 @@ export type FunctionParent =
   | ObjectMethod
   | ArrowFunctionExpression
   | ClassMethod
-  | ClassPrivateMethod;
+  | ClassPrivateMethod
+  | StaticBlock
+  | TSModuleBlock;
 export type Pureish =
   | FunctionDeclaration
   | FunctionExpression
@@ -2214,7 +2391,11 @@ export type PatternLike =
   | RestElement
   | AssignmentPattern
   | ArrayPattern
-  | ObjectPattern;
+  | ObjectPattern
+  | TSAsExpression
+  | TSSatisfiesExpression
+  | TSTypeAssertion
+  | TSNonNullExpression;
 export type LVal =
   | Identifier
   | MemberExpression
@@ -2222,7 +2403,11 @@ export type LVal =
   | AssignmentPattern
   | ArrayPattern
   | ObjectPattern
-  | TSParameterProperty;
+  | TSParameterProperty
+  | TSAsExpression
+  | TSSatisfiesExpression
+  | TSTypeAssertion
+  | TSNonNullExpression;
 export type TSEntityName = Identifier | TSQualifiedName;
 export type Literal =
   | StringLiteral
@@ -2260,7 +2445,11 @@ export type UserWhitespacable =
   | ObjectTypeSpreadProperty;
 export type Method = ObjectMethod | ClassMethod | ClassPrivateMethod;
 export type ObjectMember = ObjectMethod | ObjectProperty;
-export type Property = ObjectProperty | ClassProperty | ClassPrivateProperty;
+export type Property =
+  | ObjectProperty
+  | ClassProperty
+  | ClassAccessorProperty
+  | ClassPrivateProperty;
 export type UnaryLike = UnaryExpression | SpreadElement;
 export type Pattern = AssignmentPattern | ArrayPattern | ObjectPattern;
 export type Class = ClassExpression | ClassDeclaration;
@@ -2280,6 +2469,8 @@ export type ModuleSpecifier =
   | ImportSpecifier
   | ExportNamespaceSpecifier
   | ExportDefaultSpecifier;
+export type Accessor = ClassAccessorProperty;
+export type Private = ClassPrivateProperty | ClassPrivateMethod | PrivateName;
 export type Flow =
   | AnyTypeAnnotation
   | ArrayTypeAnnotation
@@ -2334,7 +2525,18 @@ export type Flow =
   | TypeParameterInstantiation
   | UnionTypeAnnotation
   | Variance
-  | VoidTypeAnnotation;
+  | VoidTypeAnnotation
+  | EnumDeclaration
+  | EnumBooleanBody
+  | EnumNumberBody
+  | EnumStringBody
+  | EnumSymbolBody
+  | EnumBooleanMember
+  | EnumNumberMember
+  | EnumStringMember
+  | EnumDefaultedMember
+  | IndexedAccessType
+  | OptionalIndexedAccessType;
 export type FlowType =
   | AnyTypeAnnotation
   | ArrayTypeAnnotation
@@ -2359,7 +2561,9 @@ export type FlowType =
   | TupleTypeAnnotation
   | TypeofTypeAnnotation
   | UnionTypeAnnotation
-  | VoidTypeAnnotation;
+  | VoidTypeAnnotation
+  | IndexedAccessType
+  | OptionalIndexedAccessType;
 export type FlowBaseAnnotation =
   | AnyTypeAnnotation
   | BooleanTypeAnnotation
@@ -2412,7 +2616,73 @@ export type JSX =
   | JSXFragment
   | JSXOpeningFragment
   | JSXClosingFragment;
-export type Private = ClassPrivateProperty | ClassPrivateMethod | PrivateName;
+export type Miscellaneous = Noop | Placeholder | V8IntrinsicIdentifier;
+export type TypeScript =
+  | TSParameterProperty
+  | TSDeclareFunction
+  | TSDeclareMethod
+  | TSQualifiedName
+  | TSCallSignatureDeclaration
+  | TSConstructSignatureDeclaration
+  | TSPropertySignature
+  | TSMethodSignature
+  | TSIndexSignature
+  | TSAnyKeyword
+  | TSBooleanKeyword
+  | TSBigIntKeyword
+  | TSIntrinsicKeyword
+  | TSNeverKeyword
+  | TSNullKeyword
+  | TSNumberKeyword
+  | TSObjectKeyword
+  | TSStringKeyword
+  | TSSymbolKeyword
+  | TSUndefinedKeyword
+  | TSUnknownKeyword
+  | TSVoidKeyword
+  | TSThisType
+  | TSFunctionType
+  | TSConstructorType
+  | TSTypeReference
+  | TSTypePredicate
+  | TSTypeQuery
+  | TSTypeLiteral
+  | TSArrayType
+  | TSTupleType
+  | TSOptionalType
+  | TSRestType
+  | TSNamedTupleMember
+  | TSUnionType
+  | TSIntersectionType
+  | TSConditionalType
+  | TSInferType
+  | TSParenthesizedType
+  | TSTypeOperator
+  | TSIndexedAccessType
+  | TSMappedType
+  | TSLiteralType
+  | TSExpressionWithTypeArguments
+  | TSInterfaceDeclaration
+  | TSInterfaceBody
+  | TSTypeAliasDeclaration
+  | TSInstantiationExpression
+  | TSAsExpression
+  | TSSatisfiesExpression
+  | TSTypeAssertion
+  | TSEnumDeclaration
+  | TSEnumMember
+  | TSModuleDeclaration
+  | TSModuleBlock
+  | TSImportType
+  | TSImportEqualsDeclaration
+  | TSExternalModuleReference
+  | TSNonNullExpression
+  | TSExportAssignment
+  | TSNamespaceExportDeclaration
+  | TSTypeAnnotation
+  | TSTypeParameterInstantiation
+  | TSTypeParameterDeclaration
+  | TSTypeParameter;
 export type TSTypeElement =
   | TSCallSignatureDeclaration
   | TSConstructSignatureDeclaration
@@ -2473,6 +2743,7 @@ export type TSBaseType =
   | TSLiteralType;
 
 export interface Aliases {
+  Standardized: Standardized;
   Expression: Expression;
   Binary: Binary;
   Scopable: Scopable;
@@ -2506,6 +2777,8 @@ export interface Aliases {
   ModuleDeclaration: ModuleDeclaration;
   ExportDeclaration: ExportDeclaration;
   ModuleSpecifier: ModuleSpecifier;
+  Accessor: Accessor;
+  Private: Private;
   Flow: Flow;
   FlowType: FlowType;
   FlowBaseAnnotation: FlowBaseAnnotation;
@@ -2514,8 +2787,5937 @@ export interface Aliases {
   EnumBody: EnumBody;
   EnumMember: EnumMember;
   JSX: JSX;
-  Private: Private;
+  Miscellaneous: Miscellaneous;
+  TypeScript: TypeScript;
   TSTypeElement: TSTypeElement;
   TSType: TSType;
   TSBaseType: TSBaseType;
+}
+
+export type DeprecatedAliases =
+  | NumberLiteral
+  | RegexLiteral
+  | RestProperty
+  | SpreadProperty;
+
+export interface ParentMaps {
+  AnyTypeAnnotation:
+    | ArrayTypeAnnotation
+    | DeclareExportDeclaration
+    | DeclareOpaqueType
+    | DeclareTypeAlias
+    | DeclaredPredicate
+    | FunctionTypeAnnotation
+    | FunctionTypeParam
+    | IndexedAccessType
+    | IntersectionTypeAnnotation
+    | NullableTypeAnnotation
+    | ObjectTypeCallProperty
+    | ObjectTypeIndexer
+    | ObjectTypeInternalSlot
+    | ObjectTypeProperty
+    | ObjectTypeSpreadProperty
+    | OpaqueType
+    | OptionalIndexedAccessType
+    | TupleTypeAnnotation
+    | TypeAlias
+    | TypeAnnotation
+    | TypeParameter
+    | TypeParameterInstantiation
+    | TypeofTypeAnnotation
+    | UnionTypeAnnotation;
+  ArgumentPlaceholder: CallExpression | NewExpression | OptionalCallExpression;
+  ArrayExpression:
+    | ArrayExpression
+    | ArrowFunctionExpression
+    | AssignmentExpression
+    | AssignmentPattern
+    | AwaitExpression
+    | BinaryExpression
+    | BindExpression
+    | CallExpression
+    | ClassAccessorProperty
+    | ClassDeclaration
+    | ClassExpression
+    | ClassMethod
+    | ClassPrivateProperty
+    | ClassProperty
+    | ConditionalExpression
+    | Decorator
+    | DoWhileStatement
+    | ExportDefaultDeclaration
+    | ExpressionStatement
+    | ForInStatement
+    | ForOfStatement
+    | ForStatement
+    | IfStatement
+    | JSXExpressionContainer
+    | JSXSpreadAttribute
+    | JSXSpreadChild
+    | LogicalExpression
+    | MemberExpression
+    | NewExpression
+    | ObjectMethod
+    | ObjectProperty
+    | OptionalCallExpression
+    | OptionalMemberExpression
+    | ParenthesizedExpression
+    | PipelineBareFunction
+    | PipelineTopicExpression
+    | ReturnStatement
+    | SequenceExpression
+    | SpreadElement
+    | SwitchCase
+    | SwitchStatement
+    | TSAsExpression
+    | TSDeclareMethod
+    | TSEnumDeclaration
+    | TSEnumMember
+    | TSExportAssignment
+    | TSInstantiationExpression
+    | TSMethodSignature
+    | TSNonNullExpression
+    | TSPropertySignature
+    | TSSatisfiesExpression
+    | TSTypeAssertion
+    | TaggedTemplateExpression
+    | TemplateLiteral
+    | ThrowStatement
+    | TupleExpression
+    | TypeCastExpression
+    | UnaryExpression
+    | UpdateExpression
+    | VariableDeclarator
+    | WhileStatement
+    | WithStatement
+    | YieldExpression;
+  ArrayPattern:
+    | ArrayPattern
+    | ArrowFunctionExpression
+    | AssignmentExpression
+    | AssignmentPattern
+    | CatchClause
+    | ClassMethod
+    | ClassPrivateMethod
+    | ForInStatement
+    | ForOfStatement
+    | FunctionDeclaration
+    | FunctionExpression
+    | ObjectMethod
+    | ObjectProperty
+    | RestElement
+    | TSDeclareFunction
+    | TSDeclareMethod
+    | VariableDeclarator;
+  ArrayTypeAnnotation:
+    | ArrayTypeAnnotation
+    | DeclareExportDeclaration
+    | DeclareOpaqueType
+    | DeclareTypeAlias
+    | DeclaredPredicate
+    | FunctionTypeAnnotation
+    | FunctionTypeParam
+    | IndexedAccessType
+    | IntersectionTypeAnnotation
+    | NullableTypeAnnotation
+    | ObjectTypeCallProperty
+    | ObjectTypeIndexer
+    | ObjectTypeInternalSlot
+    | ObjectTypeProperty
+    | ObjectTypeSpreadProperty
+    | OpaqueType
+    | OptionalIndexedAccessType
+    | TupleTypeAnnotation
+    | TypeAlias
+    | TypeAnnotation
+    | TypeParameter
+    | TypeParameterInstantiation
+    | TypeofTypeAnnotation
+    | UnionTypeAnnotation;
+  ArrowFunctionExpression:
+    | ArrayExpression
+    | ArrowFunctionExpression
+    | AssignmentExpression
+    | AssignmentPattern
+    | AwaitExpression
+    | BinaryExpression
+    | BindExpression
+    | CallExpression
+    | ClassAccessorProperty
+    | ClassDeclaration
+    | ClassExpression
+    | ClassMethod
+    | ClassPrivateProperty
+    | ClassProperty
+    | ConditionalExpression
+    | Decorator
+    | DoWhileStatement
+    | ExportDefaultDeclaration
+    | ExpressionStatement
+    | ForInStatement
+    | ForOfStatement
+    | ForStatement
+    | IfStatement
+    | JSXExpressionContainer
+    | JSXSpreadAttribute
+    | JSXSpreadChild
+    | LogicalExpression
+    | MemberExpression
+    | NewExpression
+    | ObjectMethod
+    | ObjectProperty
+    | OptionalCallExpression
+    | OptionalMemberExpression
+    | ParenthesizedExpression
+    | PipelineBareFunction
+    | PipelineTopicExpression
+    | ReturnStatement
+    | SequenceExpression
+    | SpreadElement
+    | SwitchCase
+    | SwitchStatement
+    | TSAsExpression
+    | TSDeclareMethod
+    | TSEnumDeclaration
+    | TSEnumMember
+    | TSExportAssignment
+    | TSInstantiationExpression
+    | TSMethodSignature
+    | TSNonNullExpression
+    | TSPropertySignature
+    | TSSatisfiesExpression
+    | TSTypeAssertion
+    | TaggedTemplateExpression
+    | TemplateLiteral
+    | ThrowStatement
+    | TupleExpression
+    | TypeCastExpression
+    | UnaryExpression
+    | UpdateExpression
+    | VariableDeclarator
+    | WhileStatement
+    | WithStatement
+    | YieldExpression;
+  AssignmentExpression:
+    | ArrayExpression
+    | ArrowFunctionExpression
+    | AssignmentExpression
+    | AssignmentPattern
+    | AwaitExpression
+    | BinaryExpression
+    | BindExpression
+    | CallExpression
+    | ClassAccessorProperty
+    | ClassDeclaration
+    | ClassExpression
+    | ClassMethod
+    | ClassPrivateProperty
+    | ClassProperty
+    | ConditionalExpression
+    | Decorator
+    | DoWhileStatement
+    | ExportDefaultDeclaration
+    | ExpressionStatement
+    | ForInStatement
+    | ForOfStatement
+    | ForStatement
+    | IfStatement
+    | JSXExpressionContainer
+    | JSXSpreadAttribute
+    | JSXSpreadChild
+    | LogicalExpression
+    | MemberExpression
+    | NewExpression
+    | ObjectMethod
+    | ObjectProperty
+    | OptionalCallExpression
+    | OptionalMemberExpression
+    | ParenthesizedExpression
+    | PipelineBareFunction
+    | PipelineTopicExpression
+    | ReturnStatement
+    | SequenceExpression
+    | SpreadElement
+    | SwitchCase
+    | SwitchStatement
+    | TSAsExpression
+    | TSDeclareMethod
+    | TSEnumDeclaration
+    | TSEnumMember
+    | TSExportAssignment
+    | TSInstantiationExpression
+    | TSMethodSignature
+    | TSNonNullExpression
+    | TSPropertySignature
+    | TSSatisfiesExpression
+    | TSTypeAssertion
+    | TaggedTemplateExpression
+    | TemplateLiteral
+    | ThrowStatement
+    | TupleExpression
+    | TypeCastExpression
+    | UnaryExpression
+    | UpdateExpression
+    | VariableDeclarator
+    | WhileStatement
+    | WithStatement
+    | YieldExpression;
+  AssignmentPattern:
+    | ArrayPattern
+    | ArrowFunctionExpression
+    | AssignmentExpression
+    | ClassMethod
+    | ClassPrivateMethod
+    | ForInStatement
+    | ForOfStatement
+    | FunctionDeclaration
+    | FunctionExpression
+    | ObjectMethod
+    | ObjectProperty
+    | RestElement
+    | TSDeclareFunction
+    | TSDeclareMethod
+    | TSParameterProperty
+    | VariableDeclarator;
+  AwaitExpression:
+    | ArrayExpression
+    | ArrowFunctionExpression
+    | AssignmentExpression
+    | AssignmentPattern
+    | AwaitExpression
+    | BinaryExpression
+    | BindExpression
+    | CallExpression
+    | ClassAccessorProperty
+    | ClassDeclaration
+    | ClassExpression
+    | ClassMethod
+    | ClassPrivateProperty
+    | ClassProperty
+    | ConditionalExpression
+    | Decorator
+    | DoWhileStatement
+    | ExportDefaultDeclaration
+    | ExpressionStatement
+    | ForInStatement
+    | ForOfStatement
+    | ForStatement
+    | IfStatement
+    | JSXExpressionContainer
+    | JSXSpreadAttribute
+    | JSXSpreadChild
+    | LogicalExpression
+    | MemberExpression
+    | NewExpression
+    | ObjectMethod
+    | ObjectProperty
+    | OptionalCallExpression
+    | OptionalMemberExpression
+    | ParenthesizedExpression
+    | PipelineBareFunction
+    | PipelineTopicExpression
+    | ReturnStatement
+    | SequenceExpression
+    | SpreadElement
+    | SwitchCase
+    | SwitchStatement
+    | TSAsExpression
+    | TSDeclareMethod
+    | TSEnumDeclaration
+    | TSEnumMember
+    | TSExportAssignment
+    | TSInstantiationExpression
+    | TSMethodSignature
+    | TSNonNullExpression
+    | TSPropertySignature
+    | TSSatisfiesExpression
+    | TSTypeAssertion
+    | TaggedTemplateExpression
+    | TemplateLiteral
+    | ThrowStatement
+    | TupleExpression
+    | TypeCastExpression
+    | UnaryExpression
+    | UpdateExpression
+    | VariableDeclarator
+    | WhileStatement
+    | WithStatement
+    | YieldExpression;
+  BigIntLiteral:
+    | ArrayExpression
+    | ArrowFunctionExpression
+    | AssignmentExpression
+    | AssignmentPattern
+    | AwaitExpression
+    | BinaryExpression
+    | BindExpression
+    | CallExpression
+    | ClassAccessorProperty
+    | ClassDeclaration
+    | ClassExpression
+    | ClassMethod
+    | ClassPrivateProperty
+    | ClassProperty
+    | ConditionalExpression
+    | Decorator
+    | DoWhileStatement
+    | ExportDefaultDeclaration
+    | ExpressionStatement
+    | ForInStatement
+    | ForOfStatement
+    | ForStatement
+    | IfStatement
+    | JSXExpressionContainer
+    | JSXSpreadAttribute
+    | JSXSpreadChild
+    | LogicalExpression
+    | MemberExpression
+    | NewExpression
+    | ObjectMethod
+    | ObjectProperty
+    | OptionalCallExpression
+    | OptionalMemberExpression
+    | ParenthesizedExpression
+    | PipelineBareFunction
+    | PipelineTopicExpression
+    | ReturnStatement
+    | SequenceExpression
+    | SpreadElement
+    | SwitchCase
+    | SwitchStatement
+    | TSAsExpression
+    | TSDeclareMethod
+    | TSEnumDeclaration
+    | TSEnumMember
+    | TSExportAssignment
+    | TSInstantiationExpression
+    | TSLiteralType
+    | TSMethodSignature
+    | TSNonNullExpression
+    | TSPropertySignature
+    | TSSatisfiesExpression
+    | TSTypeAssertion
+    | TaggedTemplateExpression
+    | TemplateLiteral
+    | ThrowStatement
+    | TupleExpression
+    | TypeCastExpression
+    | UnaryExpression
+    | UpdateExpression
+    | VariableDeclarator
+    | WhileStatement
+    | WithStatement
+    | YieldExpression;
+  BinaryExpression:
+    | ArrayExpression
+    | ArrowFunctionExpression
+    | AssignmentExpression
+    | AssignmentPattern
+    | AwaitExpression
+    | BinaryExpression
+    | BindExpression
+    | CallExpression
+    | ClassAccessorProperty
+    | ClassDeclaration
+    | ClassExpression
+    | ClassMethod
+    | ClassPrivateProperty
+    | ClassProperty
+    | ConditionalExpression
+    | Decorator
+    | DoWhileStatement
+    | ExportDefaultDeclaration
+    | ExpressionStatement
+    | ForInStatement
+    | ForOfStatement
+    | ForStatement
+    | IfStatement
+    | JSXExpressionContainer
+    | JSXSpreadAttribute
+    | JSXSpreadChild
+    | LogicalExpression
+    | MemberExpression
+    | NewExpression
+    | ObjectMethod
+    | ObjectProperty
+    | OptionalCallExpression
+    | OptionalMemberExpression
+    | ParenthesizedExpression
+    | PipelineBareFunction
+    | PipelineTopicExpression
+    | ReturnStatement
+    | SequenceExpression
+    | SpreadElement
+    | SwitchCase
+    | SwitchStatement
+    | TSAsExpression
+    | TSDeclareMethod
+    | TSEnumDeclaration
+    | TSEnumMember
+    | TSExportAssignment
+    | TSInstantiationExpression
+    | TSMethodSignature
+    | TSNonNullExpression
+    | TSPropertySignature
+    | TSSatisfiesExpression
+    | TSTypeAssertion
+    | TaggedTemplateExpression
+    | TemplateLiteral
+    | ThrowStatement
+    | TupleExpression
+    | TypeCastExpression
+    | UnaryExpression
+    | UpdateExpression
+    | VariableDeclarator
+    | WhileStatement
+    | WithStatement
+    | YieldExpression;
+  BindExpression:
+    | ArrayExpression
+    | ArrowFunctionExpression
+    | AssignmentExpression
+    | AssignmentPattern
+    | AwaitExpression
+    | BinaryExpression
+    | BindExpression
+    | CallExpression
+    | ClassAccessorProperty
+    | ClassDeclaration
+    | ClassExpression
+    | ClassMethod
+    | ClassPrivateProperty
+    | ClassProperty
+    | ConditionalExpression
+    | Decorator
+    | DoWhileStatement
+    | ExportDefaultDeclaration
+    | ExpressionStatement
+    | ForInStatement
+    | ForOfStatement
+    | ForStatement
+    | IfStatement
+    | JSXExpressionContainer
+    | JSXSpreadAttribute
+    | JSXSpreadChild
+    | LogicalExpression
+    | MemberExpression
+    | NewExpression
+    | ObjectMethod
+    | ObjectProperty
+    | OptionalCallExpression
+    | OptionalMemberExpression
+    | ParenthesizedExpression
+    | PipelineBareFunction
+    | PipelineTopicExpression
+    | ReturnStatement
+    | SequenceExpression
+    | SpreadElement
+    | SwitchCase
+    | SwitchStatement
+    | TSAsExpression
+    | TSDeclareMethod
+    | TSEnumDeclaration
+    | TSEnumMember
+    | TSExportAssignment
+    | TSInstantiationExpression
+    | TSMethodSignature
+    | TSNonNullExpression
+    | TSPropertySignature
+    | TSSatisfiesExpression
+    | TSTypeAssertion
+    | TaggedTemplateExpression
+    | TemplateLiteral
+    | ThrowStatement
+    | TupleExpression
+    | TypeCastExpression
+    | UnaryExpression
+    | UpdateExpression
+    | VariableDeclarator
+    | WhileStatement
+    | WithStatement
+    | YieldExpression;
+  BlockStatement:
+    | ArrowFunctionExpression
+    | BlockStatement
+    | CatchClause
+    | ClassMethod
+    | ClassPrivateMethod
+    | DeclareModule
+    | DoExpression
+    | DoWhileStatement
+    | ForInStatement
+    | ForOfStatement
+    | ForStatement
+    | FunctionDeclaration
+    | FunctionExpression
+    | IfStatement
+    | LabeledStatement
+    | ObjectMethod
+    | Program
+    | StaticBlock
+    | SwitchCase
+    | TSModuleBlock
+    | TryStatement
+    | WhileStatement
+    | WithStatement;
+  BooleanLiteral:
+    | ArrayExpression
+    | ArrowFunctionExpression
+    | AssignmentExpression
+    | AssignmentPattern
+    | AwaitExpression
+    | BinaryExpression
+    | BindExpression
+    | CallExpression
+    | ClassAccessorProperty
+    | ClassDeclaration
+    | ClassExpression
+    | ClassMethod
+    | ClassPrivateProperty
+    | ClassProperty
+    | ConditionalExpression
+    | Decorator
+    | DoWhileStatement
+    | EnumBooleanMember
+    | ExportDefaultDeclaration
+    | ExpressionStatement
+    | ForInStatement
+    | ForOfStatement
+    | ForStatement
+    | IfStatement
+    | JSXExpressionContainer
+    | JSXSpreadAttribute
+    | JSXSpreadChild
+    | LogicalExpression
+    | MemberExpression
+    | NewExpression
+    | ObjectMethod
+    | ObjectProperty
+    | OptionalCallExpression
+    | OptionalMemberExpression
+    | ParenthesizedExpression
+    | PipelineBareFunction
+    | PipelineTopicExpression
+    | ReturnStatement
+    | SequenceExpression
+    | SpreadElement
+    | SwitchCase
+    | SwitchStatement
+    | TSAsExpression
+    | TSDeclareMethod
+    | TSEnumDeclaration
+    | TSEnumMember
+    | TSExportAssignment
+    | TSInstantiationExpression
+    | TSLiteralType
+    | TSMethodSignature
+    | TSNonNullExpression
+    | TSPropertySignature
+    | TSSatisfiesExpression
+    | TSTypeAssertion
+    | TaggedTemplateExpression
+    | TemplateLiteral
+    | ThrowStatement
+    | TupleExpression
+    | TypeCastExpression
+    | UnaryExpression
+    | UpdateExpression
+    | VariableDeclarator
+    | WhileStatement
+    | WithStatement
+    | YieldExpression;
+  BooleanLiteralTypeAnnotation:
+    | ArrayTypeAnnotation
+    | DeclareExportDeclaration
+    | DeclareOpaqueType
+    | DeclareTypeAlias
+    | DeclaredPredicate
+    | FunctionTypeAnnotation
+    | FunctionTypeParam
+    | IndexedAccessType
+    | IntersectionTypeAnnotation
+    | NullableTypeAnnotation
+    | ObjectTypeCallProperty
+    | ObjectTypeIndexer
+    | ObjectTypeInternalSlot
+    | ObjectTypeProperty
+    | ObjectTypeSpreadProperty
+    | OpaqueType
+    | OptionalIndexedAccessType
+    | TupleTypeAnnotation
+    | TypeAlias
+    | TypeAnnotation
+    | TypeParameter
+    | TypeParameterInstantiation
+    | TypeofTypeAnnotation
+    | UnionTypeAnnotation;
+  BooleanTypeAnnotation:
+    | ArrayTypeAnnotation
+    | DeclareExportDeclaration
+    | DeclareOpaqueType
+    | DeclareTypeAlias
+    | DeclaredPredicate
+    | FunctionTypeAnnotation
+    | FunctionTypeParam
+    | IndexedAccessType
+    | IntersectionTypeAnnotation
+    | NullableTypeAnnotation
+    | ObjectTypeCallProperty
+    | ObjectTypeIndexer
+    | ObjectTypeInternalSlot
+    | ObjectTypeProperty
+    | ObjectTypeSpreadProperty
+    | OpaqueType
+    | OptionalIndexedAccessType
+    | TupleTypeAnnotation
+    | TypeAlias
+    | TypeAnnotation
+    | TypeParameter
+    | TypeParameterInstantiation
+    | TypeofTypeAnnotation
+    | UnionTypeAnnotation;
+  BreakStatement:
+    | BlockStatement
+    | DoWhileStatement
+    | ForInStatement
+    | ForOfStatement
+    | ForStatement
+    | IfStatement
+    | LabeledStatement
+    | Program
+    | StaticBlock
+    | SwitchCase
+    | TSModuleBlock
+    | WhileStatement
+    | WithStatement;
+  CallExpression:
+    | ArrayExpression
+    | ArrowFunctionExpression
+    | AssignmentExpression
+    | AssignmentPattern
+    | AwaitExpression
+    | BinaryExpression
+    | BindExpression
+    | CallExpression
+    | ClassAccessorProperty
+    | ClassDeclaration
+    | ClassExpression
+    | ClassMethod
+    | ClassPrivateProperty
+    | ClassProperty
+    | ConditionalExpression
+    | Decorator
+    | DoWhileStatement
+    | ExportDefaultDeclaration
+    | ExpressionStatement
+    | ForInStatement
+    | ForOfStatement
+    | ForStatement
+    | IfStatement
+    | JSXExpressionContainer
+    | JSXSpreadAttribute
+    | JSXSpreadChild
+    | LogicalExpression
+    | MemberExpression
+    | NewExpression
+    | ObjectMethod
+    | ObjectProperty
+    | OptionalCallExpression
+    | OptionalMemberExpression
+    | ParenthesizedExpression
+    | PipelineBareFunction
+    | PipelineTopicExpression
+    | ReturnStatement
+    | SequenceExpression
+    | SpreadElement
+    | SwitchCase
+    | SwitchStatement
+    | TSAsExpression
+    | TSDeclareMethod
+    | TSEnumDeclaration
+    | TSEnumMember
+    | TSExportAssignment
+    | TSInstantiationExpression
+    | TSMethodSignature
+    | TSNonNullExpression
+    | TSPropertySignature
+    | TSSatisfiesExpression
+    | TSTypeAssertion
+    | TaggedTemplateExpression
+    | TemplateLiteral
+    | ThrowStatement
+    | TupleExpression
+    | TypeCastExpression
+    | UnaryExpression
+    | UpdateExpression
+    | VariableDeclarator
+    | WhileStatement
+    | WithStatement
+    | YieldExpression;
+  CatchClause: TryStatement;
+  ClassAccessorProperty: ClassBody;
+  ClassBody: ClassDeclaration | ClassExpression;
+  ClassDeclaration:
+    | BlockStatement
+    | DoWhileStatement
+    | ExportDefaultDeclaration
+    | ExportNamedDeclaration
+    | ForInStatement
+    | ForOfStatement
+    | ForStatement
+    | IfStatement
+    | LabeledStatement
+    | Program
+    | StaticBlock
+    | SwitchCase
+    | TSModuleBlock
+    | WhileStatement
+    | WithStatement;
+  ClassExpression:
+    | ArrayExpression
+    | ArrowFunctionExpression
+    | AssignmentExpression
+    | AssignmentPattern
+    | AwaitExpression
+    | BinaryExpression
+    | BindExpression
+    | CallExpression
+    | ClassAccessorProperty
+    | ClassDeclaration
+    | ClassExpression
+    | ClassMethod
+    | ClassPrivateProperty
+    | ClassProperty
+    | ConditionalExpression
+    | Decorator
+    | DoWhileStatement
+    | ExportDefaultDeclaration
+    | ExpressionStatement
+    | ForInStatement
+    | ForOfStatement
+    | ForStatement
+    | IfStatement
+    | JSXExpressionContainer
+    | JSXSpreadAttribute
+    | JSXSpreadChild
+    | LogicalExpression
+    | MemberExpression
+    | NewExpression
+    | ObjectMethod
+    | ObjectProperty
+    | OptionalCallExpression
+    | OptionalMemberExpression
+    | ParenthesizedExpression
+    | PipelineBareFunction
+    | PipelineTopicExpression
+    | ReturnStatement
+    | SequenceExpression
+    | SpreadElement
+    | SwitchCase
+    | SwitchStatement
+    | TSAsExpression
+    | TSDeclareMethod
+    | TSEnumDeclaration
+    | TSEnumMember
+    | TSExportAssignment
+    | TSInstantiationExpression
+    | TSMethodSignature
+    | TSNonNullExpression
+    | TSPropertySignature
+    | TSSatisfiesExpression
+    | TSTypeAssertion
+    | TaggedTemplateExpression
+    | TemplateLiteral
+    | ThrowStatement
+    | TupleExpression
+    | TypeCastExpression
+    | UnaryExpression
+    | UpdateExpression
+    | VariableDeclarator
+    | WhileStatement
+    | WithStatement
+    | YieldExpression;
+  ClassImplements:
+    | ClassDeclaration
+    | ClassExpression
+    | DeclareClass
+    | DeclareExportDeclaration
+    | DeclareInterface
+    | DeclaredPredicate
+    | InterfaceDeclaration;
+  ClassMethod: ClassBody;
+  ClassPrivateMethod: ClassBody;
+  ClassPrivateProperty: ClassBody;
+  ClassProperty: ClassBody;
+  CommentBlock: File;
+  CommentLine: File;
+  ConditionalExpression:
+    | ArrayExpression
+    | ArrowFunctionExpression
+    | AssignmentExpression
+    | AssignmentPattern
+    | AwaitExpression
+    | BinaryExpression
+    | BindExpression
+    | CallExpression
+    | ClassAccessorProperty
+    | ClassDeclaration
+    | ClassExpression
+    | ClassMethod
+    | ClassPrivateProperty
+    | ClassProperty
+    | ConditionalExpression
+    | Decorator
+    | DoWhileStatement
+    | ExportDefaultDeclaration
+    | ExpressionStatement
+    | ForInStatement
+    | ForOfStatement
+    | ForStatement
+    | IfStatement
+    | JSXExpressionContainer
+    | JSXSpreadAttribute
+    | JSXSpreadChild
+    | LogicalExpression
+    | MemberExpression
+    | NewExpression
+    | ObjectMethod
+    | ObjectProperty
+    | OptionalCallExpression
+    | OptionalMemberExpression
+    | ParenthesizedExpression
+    | PipelineBareFunction
+    | PipelineTopicExpression
+    | ReturnStatement
+    | SequenceExpression
+    | SpreadElement
+    | SwitchCase
+    | SwitchStatement
+    | TSAsExpression
+    | TSDeclareMethod
+    | TSEnumDeclaration
+    | TSEnumMember
+    | TSExportAssignment
+    | TSInstantiationExpression
+    | TSMethodSignature
+    | TSNonNullExpression
+    | TSPropertySignature
+    | TSSatisfiesExpression
+    | TSTypeAssertion
+    | TaggedTemplateExpression
+    | TemplateLiteral
+    | ThrowStatement
+    | TupleExpression
+    | TypeCastExpression
+    | UnaryExpression
+    | UpdateExpression
+    | VariableDeclarator
+    | WhileStatement
+    | WithStatement
+    | YieldExpression;
+  ContinueStatement:
+    | BlockStatement
+    | DoWhileStatement
+    | ForInStatement
+    | ForOfStatement
+    | ForStatement
+    | IfStatement
+    | LabeledStatement
+    | Program
+    | StaticBlock
+    | SwitchCase
+    | TSModuleBlock
+    | WhileStatement
+    | WithStatement;
+  DebuggerStatement:
+    | BlockStatement
+    | DoWhileStatement
+    | ForInStatement
+    | ForOfStatement
+    | ForStatement
+    | IfStatement
+    | LabeledStatement
+    | Program
+    | StaticBlock
+    | SwitchCase
+    | TSModuleBlock
+    | WhileStatement
+    | WithStatement;
+  DecimalLiteral:
+    | ArrayExpression
+    | ArrowFunctionExpression
+    | AssignmentExpression
+    | AssignmentPattern
+    | AwaitExpression
+    | BinaryExpression
+    | BindExpression
+    | CallExpression
+    | ClassAccessorProperty
+    | ClassDeclaration
+    | ClassExpression
+    | ClassMethod
+    | ClassPrivateProperty
+    | ClassProperty
+    | ConditionalExpression
+    | Decorator
+    | DoWhileStatement
+    | ExportDefaultDeclaration
+    | ExpressionStatement
+    | ForInStatement
+    | ForOfStatement
+    | ForStatement
+    | IfStatement
+    | JSXExpressionContainer
+    | JSXSpreadAttribute
+    | JSXSpreadChild
+    | LogicalExpression
+    | MemberExpression
+    | NewExpression
+    | ObjectMethod
+    | ObjectProperty
+    | OptionalCallExpression
+    | OptionalMemberExpression
+    | ParenthesizedExpression
+    | PipelineBareFunction
+    | PipelineTopicExpression
+    | ReturnStatement
+    | SequenceExpression
+    | SpreadElement
+    | SwitchCase
+    | SwitchStatement
+    | TSAsExpression
+    | TSDeclareMethod
+    | TSEnumDeclaration
+    | TSEnumMember
+    | TSExportAssignment
+    | TSInstantiationExpression
+    | TSMethodSignature
+    | TSNonNullExpression
+    | TSPropertySignature
+    | TSSatisfiesExpression
+    | TSTypeAssertion
+    | TaggedTemplateExpression
+    | TemplateLiteral
+    | ThrowStatement
+    | TupleExpression
+    | TypeCastExpression
+    | UnaryExpression
+    | UpdateExpression
+    | VariableDeclarator
+    | WhileStatement
+    | WithStatement
+    | YieldExpression;
+  DeclareClass:
+    | BlockStatement
+    | DeclareExportDeclaration
+    | DeclaredPredicate
+    | DoWhileStatement
+    | ExportNamedDeclaration
+    | ForInStatement
+    | ForOfStatement
+    | ForStatement
+    | IfStatement
+    | LabeledStatement
+    | Program
+    | StaticBlock
+    | SwitchCase
+    | TSModuleBlock
+    | WhileStatement
+    | WithStatement;
+  DeclareExportAllDeclaration:
+    | BlockStatement
+    | DeclareExportDeclaration
+    | DeclaredPredicate
+    | DoWhileStatement
+    | ExportNamedDeclaration
+    | ForInStatement
+    | ForOfStatement
+    | ForStatement
+    | IfStatement
+    | LabeledStatement
+    | Program
+    | StaticBlock
+    | SwitchCase
+    | TSModuleBlock
+    | WhileStatement
+    | WithStatement;
+  DeclareExportDeclaration:
+    | BlockStatement
+    | DeclareExportDeclaration
+    | DeclaredPredicate
+    | DoWhileStatement
+    | ExportNamedDeclaration
+    | ForInStatement
+    | ForOfStatement
+    | ForStatement
+    | IfStatement
+    | LabeledStatement
+    | Program
+    | StaticBlock
+    | SwitchCase
+    | TSModuleBlock
+    | WhileStatement
+    | WithStatement;
+  DeclareFunction:
+    | BlockStatement
+    | DeclareExportDeclaration
+    | DeclaredPredicate
+    | DoWhileStatement
+    | ExportNamedDeclaration
+    | ForInStatement
+    | ForOfStatement
+    | ForStatement
+    | IfStatement
+    | LabeledStatement
+    | Program
+    | StaticBlock
+    | SwitchCase
+    | TSModuleBlock
+    | WhileStatement
+    | WithStatement;
+  DeclareInterface:
+    | BlockStatement
+    | DeclareExportDeclaration
+    | DeclaredPredicate
+    | DoWhileStatement
+    | ExportNamedDeclaration
+    | ForInStatement
+    | ForOfStatement
+    | ForStatement
+    | IfStatement
+    | LabeledStatement
+    | Program
+    | StaticBlock
+    | SwitchCase
+    | TSModuleBlock
+    | WhileStatement
+    | WithStatement;
+  DeclareModule:
+    | BlockStatement
+    | DeclareExportDeclaration
+    | DeclaredPredicate
+    | DoWhileStatement
+    | ExportNamedDeclaration
+    | ForInStatement
+    | ForOfStatement
+    | ForStatement
+    | IfStatement
+    | LabeledStatement
+    | Program
+    | StaticBlock
+    | SwitchCase
+    | TSModuleBlock
+    | WhileStatement
+    | WithStatement;
+  DeclareModuleExports:
+    | BlockStatement
+    | DeclareExportDeclaration
+    | DeclaredPredicate
+    | DoWhileStatement
+    | ExportNamedDeclaration
+    | ForInStatement
+    | ForOfStatement
+    | ForStatement
+    | IfStatement
+    | LabeledStatement
+    | Program
+    | StaticBlock
+    | SwitchCase
+    | TSModuleBlock
+    | WhileStatement
+    | WithStatement;
+  DeclareOpaqueType:
+    | BlockStatement
+    | DeclareExportDeclaration
+    | DeclaredPredicate
+    | DoWhileStatement
+    | ExportNamedDeclaration
+    | ForInStatement
+    | ForOfStatement
+    | ForStatement
+    | IfStatement
+    | LabeledStatement
+    | Program
+    | StaticBlock
+    | SwitchCase
+    | TSModuleBlock
+    | WhileStatement
+    | WithStatement;
+  DeclareTypeAlias:
+    | BlockStatement
+    | DeclareExportDeclaration
+    | DeclaredPredicate
+    | DoWhileStatement
+    | ExportNamedDeclaration
+    | ForInStatement
+    | ForOfStatement
+    | ForStatement
+    | IfStatement
+    | LabeledStatement
+    | Program
+    | StaticBlock
+    | SwitchCase
+    | TSModuleBlock
+    | WhileStatement
+    | WithStatement;
+  DeclareVariable:
+    | BlockStatement
+    | DeclareExportDeclaration
+    | DeclaredPredicate
+    | DoWhileStatement
+    | ExportNamedDeclaration
+    | ForInStatement
+    | ForOfStatement
+    | ForStatement
+    | IfStatement
+    | LabeledStatement
+    | Program
+    | StaticBlock
+    | SwitchCase
+    | TSModuleBlock
+    | WhileStatement
+    | WithStatement;
+  DeclaredPredicate:
+    | ArrowFunctionExpression
+    | DeclareExportDeclaration
+    | DeclareFunction
+    | DeclaredPredicate
+    | FunctionDeclaration
+    | FunctionExpression;
+  Decorator:
+    | ArrayPattern
+    | AssignmentPattern
+    | ClassAccessorProperty
+    | ClassDeclaration
+    | ClassExpression
+    | ClassMethod
+    | ClassPrivateMethod
+    | ClassPrivateProperty
+    | ClassProperty
+    | Identifier
+    | ObjectMethod
+    | ObjectPattern
+    | ObjectProperty
+    | RestElement
+    | TSDeclareMethod
+    | TSParameterProperty;
+  Directive: BlockStatement | Program;
+  DirectiveLiteral: Directive;
+  DoExpression:
+    | ArrayExpression
+    | ArrowFunctionExpression
+    | AssignmentExpression
+    | AssignmentPattern
+    | AwaitExpression
+    | BinaryExpression
+    | BindExpression
+    | CallExpression
+    | ClassAccessorProperty
+    | ClassDeclaration
+    | ClassExpression
+    | ClassMethod
+    | ClassPrivateProperty
+    | ClassProperty
+    | ConditionalExpression
+    | Decorator
+    | DoWhileStatement
+    | ExportDefaultDeclaration
+    | ExpressionStatement
+    | ForInStatement
+    | ForOfStatement
+    | ForStatement
+    | IfStatement
+    | JSXExpressionContainer
+    | JSXSpreadAttribute
+    | JSXSpreadChild
+    | LogicalExpression
+    | MemberExpression
+    | NewExpression
+    | ObjectMethod
+    | ObjectProperty
+    | OptionalCallExpression
+    | OptionalMemberExpression
+    | ParenthesizedExpression
+    | PipelineBareFunction
+    | PipelineTopicExpression
+    | ReturnStatement
+    | SequenceExpression
+    | SpreadElement
+    | SwitchCase
+    | SwitchStatement
+    | TSAsExpression
+    | TSDeclareMethod
+    | TSEnumDeclaration
+    | TSEnumMember
+    | TSExportAssignment
+    | TSInstantiationExpression
+    | TSMethodSignature
+    | TSNonNullExpression
+    | TSPropertySignature
+    | TSSatisfiesExpression
+    | TSTypeAssertion
+    | TaggedTemplateExpression
+    | TemplateLiteral
+    | ThrowStatement
+    | TupleExpression
+    | TypeCastExpression
+    | UnaryExpression
+    | UpdateExpression
+    | VariableDeclarator
+    | WhileStatement
+    | WithStatement
+    | YieldExpression;
+  DoWhileStatement:
+    | BlockStatement
+    | DoWhileStatement
+    | ForInStatement
+    | ForOfStatement
+    | ForStatement
+    | IfStatement
+    | LabeledStatement
+    | Program
+    | StaticBlock
+    | SwitchCase
+    | TSModuleBlock
+    | WhileStatement
+    | WithStatement;
+  EmptyStatement:
+    | BlockStatement
+    | DoWhileStatement
+    | ForInStatement
+    | ForOfStatement
+    | ForStatement
+    | IfStatement
+    | LabeledStatement
+    | Program
+    | StaticBlock
+    | SwitchCase
+    | TSModuleBlock
+    | WhileStatement
+    | WithStatement;
+  EmptyTypeAnnotation:
+    | ArrayTypeAnnotation
+    | DeclareExportDeclaration
+    | DeclareOpaqueType
+    | DeclareTypeAlias
+    | DeclaredPredicate
+    | FunctionTypeAnnotation
+    | FunctionTypeParam
+    | IndexedAccessType
+    | IntersectionTypeAnnotation
+    | NullableTypeAnnotation
+    | ObjectTypeCallProperty
+    | ObjectTypeIndexer
+    | ObjectTypeInternalSlot
+    | ObjectTypeProperty
+    | ObjectTypeSpreadProperty
+    | OpaqueType
+    | OptionalIndexedAccessType
+    | TupleTypeAnnotation
+    | TypeAlias
+    | TypeAnnotation
+    | TypeParameter
+    | TypeParameterInstantiation
+    | TypeofTypeAnnotation
+    | UnionTypeAnnotation;
+  EnumBooleanBody:
+    | DeclareExportDeclaration
+    | DeclaredPredicate
+    | EnumDeclaration;
+  EnumBooleanMember:
+    | DeclareExportDeclaration
+    | DeclaredPredicate
+    | EnumBooleanBody;
+  EnumDeclaration:
+    | BlockStatement
+    | DeclareExportDeclaration
+    | DeclaredPredicate
+    | DoWhileStatement
+    | ExportNamedDeclaration
+    | ForInStatement
+    | ForOfStatement
+    | ForStatement
+    | IfStatement
+    | LabeledStatement
+    | Program
+    | StaticBlock
+    | SwitchCase
+    | TSModuleBlock
+    | WhileStatement
+    | WithStatement;
+  EnumDefaultedMember:
+    | DeclareExportDeclaration
+    | DeclaredPredicate
+    | EnumStringBody
+    | EnumSymbolBody;
+  EnumNumberBody:
+    | DeclareExportDeclaration
+    | DeclaredPredicate
+    | EnumDeclaration;
+  EnumNumberMember:
+    | DeclareExportDeclaration
+    | DeclaredPredicate
+    | EnumNumberBody;
+  EnumStringBody:
+    | DeclareExportDeclaration
+    | DeclaredPredicate
+    | EnumDeclaration;
+  EnumStringMember:
+    | DeclareExportDeclaration
+    | DeclaredPredicate
+    | EnumStringBody;
+  EnumSymbolBody:
+    | DeclareExportDeclaration
+    | DeclaredPredicate
+    | EnumDeclaration;
+  ExistsTypeAnnotation:
+    | ArrayTypeAnnotation
+    | DeclareExportDeclaration
+    | DeclareOpaqueType
+    | DeclareTypeAlias
+    | DeclaredPredicate
+    | FunctionTypeAnnotation
+    | FunctionTypeParam
+    | IndexedAccessType
+    | IntersectionTypeAnnotation
+    | NullableTypeAnnotation
+    | ObjectTypeCallProperty
+    | ObjectTypeIndexer
+    | ObjectTypeInternalSlot
+    | ObjectTypeProperty
+    | ObjectTypeSpreadProperty
+    | OpaqueType
+    | OptionalIndexedAccessType
+    | TupleTypeAnnotation
+    | TypeAlias
+    | TypeAnnotation
+    | TypeParameter
+    | TypeParameterInstantiation
+    | TypeofTypeAnnotation
+    | UnionTypeAnnotation;
+  ExportAllDeclaration:
+    | BlockStatement
+    | DoWhileStatement
+    | ExportNamedDeclaration
+    | ForInStatement
+    | ForOfStatement
+    | ForStatement
+    | IfStatement
+    | LabeledStatement
+    | Program
+    | StaticBlock
+    | SwitchCase
+    | TSModuleBlock
+    | WhileStatement
+    | WithStatement;
+  ExportDefaultDeclaration:
+    | BlockStatement
+    | DoWhileStatement
+    | ExportNamedDeclaration
+    | ForInStatement
+    | ForOfStatement
+    | ForStatement
+    | IfStatement
+    | LabeledStatement
+    | Program
+    | StaticBlock
+    | SwitchCase
+    | TSModuleBlock
+    | WhileStatement
+    | WithStatement;
+  ExportDefaultSpecifier: ExportNamedDeclaration;
+  ExportNamedDeclaration:
+    | BlockStatement
+    | DoWhileStatement
+    | ExportNamedDeclaration
+    | ForInStatement
+    | ForOfStatement
+    | ForStatement
+    | IfStatement
+    | LabeledStatement
+    | Program
+    | StaticBlock
+    | SwitchCase
+    | TSModuleBlock
+    | WhileStatement
+    | WithStatement;
+  ExportNamespaceSpecifier: DeclareExportDeclaration | ExportNamedDeclaration;
+  ExportSpecifier: DeclareExportDeclaration | ExportNamedDeclaration;
+  ExpressionStatement:
+    | BlockStatement
+    | DoWhileStatement
+    | ForInStatement
+    | ForOfStatement
+    | ForStatement
+    | IfStatement
+    | LabeledStatement
+    | Program
+    | StaticBlock
+    | SwitchCase
+    | TSModuleBlock
+    | WhileStatement
+    | WithStatement;
+  File: null;
+  ForInStatement:
+    | BlockStatement
+    | DoWhileStatement
+    | ForInStatement
+    | ForOfStatement
+    | ForStatement
+    | IfStatement
+    | LabeledStatement
+    | Program
+    | StaticBlock
+    | SwitchCase
+    | TSModuleBlock
+    | WhileStatement
+    | WithStatement;
+  ForOfStatement:
+    | BlockStatement
+    | DoWhileStatement
+    | ForInStatement
+    | ForOfStatement
+    | ForStatement
+    | IfStatement
+    | LabeledStatement
+    | Program
+    | StaticBlock
+    | SwitchCase
+    | TSModuleBlock
+    | WhileStatement
+    | WithStatement;
+  ForStatement:
+    | BlockStatement
+    | DoWhileStatement
+    | ForInStatement
+    | ForOfStatement
+    | ForStatement
+    | IfStatement
+    | LabeledStatement
+    | Program
+    | StaticBlock
+    | SwitchCase
+    | TSModuleBlock
+    | WhileStatement
+    | WithStatement;
+  FunctionDeclaration:
+    | BlockStatement
+    | DoWhileStatement
+    | ExportDefaultDeclaration
+    | ExportNamedDeclaration
+    | ForInStatement
+    | ForOfStatement
+    | ForStatement
+    | IfStatement
+    | LabeledStatement
+    | Program
+    | StaticBlock
+    | SwitchCase
+    | TSModuleBlock
+    | WhileStatement
+    | WithStatement;
+  FunctionExpression:
+    | ArrayExpression
+    | ArrowFunctionExpression
+    | AssignmentExpression
+    | AssignmentPattern
+    | AwaitExpression
+    | BinaryExpression
+    | BindExpression
+    | CallExpression
+    | ClassAccessorProperty
+    | ClassDeclaration
+    | ClassExpression
+    | ClassMethod
+    | ClassPrivateProperty
+    | ClassProperty
+    | ConditionalExpression
+    | Decorator
+    | DoWhileStatement
+    | ExportDefaultDeclaration
+    | ExpressionStatement
+    | ForInStatement
+    | ForOfStatement
+    | ForStatement
+    | IfStatement
+    | JSXExpressionContainer
+    | JSXSpreadAttribute
+    | JSXSpreadChild
+    | LogicalExpression
+    | MemberExpression
+    | NewExpression
+    | ObjectMethod
+    | ObjectProperty
+    | OptionalCallExpression
+    | OptionalMemberExpression
+    | ParenthesizedExpression
+    | PipelineBareFunction
+    | PipelineTopicExpression
+    | ReturnStatement
+    | SequenceExpression
+    | SpreadElement
+    | SwitchCase
+    | SwitchStatement
+    | TSAsExpression
+    | TSDeclareMethod
+    | TSEnumDeclaration
+    | TSEnumMember
+    | TSExportAssignment
+    | TSInstantiationExpression
+    | TSMethodSignature
+    | TSNonNullExpression
+    | TSPropertySignature
+    | TSSatisfiesExpression
+    | TSTypeAssertion
+    | TaggedTemplateExpression
+    | TemplateLiteral
+    | ThrowStatement
+    | TupleExpression
+    | TypeCastExpression
+    | UnaryExpression
+    | UpdateExpression
+    | VariableDeclarator
+    | WhileStatement
+    | WithStatement
+    | YieldExpression;
+  FunctionTypeAnnotation:
+    | ArrayTypeAnnotation
+    | DeclareExportDeclaration
+    | DeclareOpaqueType
+    | DeclareTypeAlias
+    | DeclaredPredicate
+    | FunctionTypeAnnotation
+    | FunctionTypeParam
+    | IndexedAccessType
+    | IntersectionTypeAnnotation
+    | NullableTypeAnnotation
+    | ObjectTypeCallProperty
+    | ObjectTypeIndexer
+    | ObjectTypeInternalSlot
+    | ObjectTypeProperty
+    | ObjectTypeSpreadProperty
+    | OpaqueType
+    | OptionalIndexedAccessType
+    | TupleTypeAnnotation
+    | TypeAlias
+    | TypeAnnotation
+    | TypeParameter
+    | TypeParameterInstantiation
+    | TypeofTypeAnnotation
+    | UnionTypeAnnotation;
+  FunctionTypeParam:
+    | DeclareExportDeclaration
+    | DeclaredPredicate
+    | FunctionTypeAnnotation;
+  GenericTypeAnnotation:
+    | ArrayTypeAnnotation
+    | DeclareExportDeclaration
+    | DeclareOpaqueType
+    | DeclareTypeAlias
+    | DeclaredPredicate
+    | FunctionTypeAnnotation
+    | FunctionTypeParam
+    | IndexedAccessType
+    | IntersectionTypeAnnotation
+    | NullableTypeAnnotation
+    | ObjectTypeCallProperty
+    | ObjectTypeIndexer
+    | ObjectTypeInternalSlot
+    | ObjectTypeProperty
+    | ObjectTypeSpreadProperty
+    | OpaqueType
+    | OptionalIndexedAccessType
+    | TupleTypeAnnotation
+    | TypeAlias
+    | TypeAnnotation
+    | TypeParameter
+    | TypeParameterInstantiation
+    | TypeofTypeAnnotation
+    | UnionTypeAnnotation;
+  Identifier:
+    | ArrayExpression
+    | ArrayPattern
+    | ArrowFunctionExpression
+    | AssignmentExpression
+    | AssignmentPattern
+    | AwaitExpression
+    | BinaryExpression
+    | BindExpression
+    | BreakStatement
+    | CallExpression
+    | CatchClause
+    | ClassAccessorProperty
+    | ClassDeclaration
+    | ClassExpression
+    | ClassImplements
+    | ClassMethod
+    | ClassPrivateMethod
+    | ClassPrivateProperty
+    | ClassProperty
+    | ConditionalExpression
+    | ContinueStatement
+    | DeclareClass
+    | DeclareFunction
+    | DeclareInterface
+    | DeclareModule
+    | DeclareOpaqueType
+    | DeclareTypeAlias
+    | DeclareVariable
+    | Decorator
+    | DoWhileStatement
+    | EnumBooleanMember
+    | EnumDeclaration
+    | EnumDefaultedMember
+    | EnumNumberMember
+    | EnumStringMember
+    | ExportDefaultDeclaration
+    | ExportDefaultSpecifier
+    | ExportNamespaceSpecifier
+    | ExportSpecifier
+    | ExpressionStatement
+    | ForInStatement
+    | ForOfStatement
+    | ForStatement
+    | FunctionDeclaration
+    | FunctionExpression
+    | FunctionTypeParam
+    | GenericTypeAnnotation
+    | IfStatement
+    | ImportAttribute
+    | ImportDefaultSpecifier
+    | ImportNamespaceSpecifier
+    | ImportSpecifier
+    | InterfaceDeclaration
+    | InterfaceExtends
+    | JSXExpressionContainer
+    | JSXSpreadAttribute
+    | JSXSpreadChild
+    | LabeledStatement
+    | LogicalExpression
+    | MemberExpression
+    | MetaProperty
+    | NewExpression
+    | ObjectMethod
+    | ObjectProperty
+    | ObjectTypeIndexer
+    | ObjectTypeInternalSlot
+    | ObjectTypeProperty
+    | OpaqueType
+    | OptionalCallExpression
+    | OptionalMemberExpression
+    | ParenthesizedExpression
+    | PipelineBareFunction
+    | PipelineTopicExpression
+    | Placeholder
+    | PrivateName
+    | QualifiedTypeIdentifier
+    | RestElement
+    | ReturnStatement
+    | SequenceExpression
+    | SpreadElement
+    | SwitchCase
+    | SwitchStatement
+    | TSAsExpression
+    | TSCallSignatureDeclaration
+    | TSConstructSignatureDeclaration
+    | TSConstructorType
+    | TSDeclareFunction
+    | TSDeclareMethod
+    | TSEnumDeclaration
+    | TSEnumMember
+    | TSExportAssignment
+    | TSExpressionWithTypeArguments
+    | TSFunctionType
+    | TSImportEqualsDeclaration
+    | TSImportType
+    | TSIndexSignature
+    | TSInstantiationExpression
+    | TSInterfaceDeclaration
+    | TSMethodSignature
+    | TSModuleDeclaration
+    | TSNamedTupleMember
+    | TSNamespaceExportDeclaration
+    | TSNonNullExpression
+    | TSParameterProperty
+    | TSPropertySignature
+    | TSQualifiedName
+    | TSSatisfiesExpression
+    | TSTypeAliasDeclaration
+    | TSTypeAssertion
+    | TSTypePredicate
+    | TSTypeQuery
+    | TSTypeReference
+    | TaggedTemplateExpression
+    | TemplateLiteral
+    | ThrowStatement
+    | TupleExpression
+    | TypeAlias
+    | TypeCastExpression
+    | UnaryExpression
+    | UpdateExpression
+    | VariableDeclarator
+    | WhileStatement
+    | WithStatement
+    | YieldExpression;
+  IfStatement:
+    | BlockStatement
+    | DoWhileStatement
+    | ForInStatement
+    | ForOfStatement
+    | ForStatement
+    | IfStatement
+    | LabeledStatement
+    | Program
+    | StaticBlock
+    | SwitchCase
+    | TSModuleBlock
+    | WhileStatement
+    | WithStatement;
+  Import:
+    | ArrayExpression
+    | ArrowFunctionExpression
+    | AssignmentExpression
+    | AssignmentPattern
+    | AwaitExpression
+    | BinaryExpression
+    | BindExpression
+    | CallExpression
+    | ClassAccessorProperty
+    | ClassDeclaration
+    | ClassExpression
+    | ClassMethod
+    | ClassPrivateProperty
+    | ClassProperty
+    | ConditionalExpression
+    | Decorator
+    | DoWhileStatement
+    | ExportDefaultDeclaration
+    | ExpressionStatement
+    | ForInStatement
+    | ForOfStatement
+    | ForStatement
+    | IfStatement
+    | JSXExpressionContainer
+    | JSXSpreadAttribute
+    | JSXSpreadChild
+    | LogicalExpression
+    | MemberExpression
+    | NewExpression
+    | ObjectMethod
+    | ObjectProperty
+    | OptionalCallExpression
+    | OptionalMemberExpression
+    | ParenthesizedExpression
+    | PipelineBareFunction
+    | PipelineTopicExpression
+    | ReturnStatement
+    | SequenceExpression
+    | SpreadElement
+    | SwitchCase
+    | SwitchStatement
+    | TSAsExpression
+    | TSDeclareMethod
+    | TSEnumDeclaration
+    | TSEnumMember
+    | TSExportAssignment
+    | TSInstantiationExpression
+    | TSMethodSignature
+    | TSNonNullExpression
+    | TSPropertySignature
+    | TSSatisfiesExpression
+    | TSTypeAssertion
+    | TaggedTemplateExpression
+    | TemplateLiteral
+    | ThrowStatement
+    | TupleExpression
+    | TypeCastExpression
+    | UnaryExpression
+    | UpdateExpression
+    | VariableDeclarator
+    | WhileStatement
+    | WithStatement
+    | YieldExpression;
+  ImportAttribute:
+    | ExportAllDeclaration
+    | ExportNamedDeclaration
+    | ImportDeclaration;
+  ImportDeclaration:
+    | BlockStatement
+    | DoWhileStatement
+    | ExportNamedDeclaration
+    | ForInStatement
+    | ForOfStatement
+    | ForStatement
+    | IfStatement
+    | LabeledStatement
+    | Program
+    | StaticBlock
+    | SwitchCase
+    | TSModuleBlock
+    | WhileStatement
+    | WithStatement;
+  ImportDefaultSpecifier: ImportDeclaration;
+  ImportNamespaceSpecifier: ImportDeclaration;
+  ImportSpecifier: ImportDeclaration;
+  IndexedAccessType:
+    | ArrayTypeAnnotation
+    | DeclareExportDeclaration
+    | DeclareOpaqueType
+    | DeclareTypeAlias
+    | DeclaredPredicate
+    | FunctionTypeAnnotation
+    | FunctionTypeParam
+    | IndexedAccessType
+    | IntersectionTypeAnnotation
+    | NullableTypeAnnotation
+    | ObjectTypeCallProperty
+    | ObjectTypeIndexer
+    | ObjectTypeInternalSlot
+    | ObjectTypeProperty
+    | ObjectTypeSpreadProperty
+    | OpaqueType
+    | OptionalIndexedAccessType
+    | TupleTypeAnnotation
+    | TypeAlias
+    | TypeAnnotation
+    | TypeParameter
+    | TypeParameterInstantiation
+    | TypeofTypeAnnotation
+    | UnionTypeAnnotation;
+  InferredPredicate:
+    | ArrowFunctionExpression
+    | DeclareExportDeclaration
+    | DeclaredPredicate
+    | FunctionDeclaration
+    | FunctionExpression;
+  InterfaceDeclaration:
+    | BlockStatement
+    | DeclareExportDeclaration
+    | DeclaredPredicate
+    | DoWhileStatement
+    | ExportNamedDeclaration
+    | ForInStatement
+    | ForOfStatement
+    | ForStatement
+    | IfStatement
+    | LabeledStatement
+    | Program
+    | StaticBlock
+    | SwitchCase
+    | TSModuleBlock
+    | WhileStatement
+    | WithStatement;
+  InterfaceExtends:
+    | ClassDeclaration
+    | ClassExpression
+    | DeclareClass
+    | DeclareExportDeclaration
+    | DeclareInterface
+    | DeclaredPredicate
+    | InterfaceDeclaration
+    | InterfaceTypeAnnotation;
+  InterfaceTypeAnnotation:
+    | ArrayTypeAnnotation
+    | DeclareExportDeclaration
+    | DeclareOpaqueType
+    | DeclareTypeAlias
+    | DeclaredPredicate
+    | FunctionTypeAnnotation
+    | FunctionTypeParam
+    | IndexedAccessType
+    | IntersectionTypeAnnotation
+    | NullableTypeAnnotation
+    | ObjectTypeCallProperty
+    | ObjectTypeIndexer
+    | ObjectTypeInternalSlot
+    | ObjectTypeProperty
+    | ObjectTypeSpreadProperty
+    | OpaqueType
+    | OptionalIndexedAccessType
+    | TupleTypeAnnotation
+    | TypeAlias
+    | TypeAnnotation
+    | TypeParameter
+    | TypeParameterInstantiation
+    | TypeofTypeAnnotation
+    | UnionTypeAnnotation;
+  InterpreterDirective: Program;
+  IntersectionTypeAnnotation:
+    | ArrayTypeAnnotation
+    | DeclareExportDeclaration
+    | DeclareOpaqueType
+    | DeclareTypeAlias
+    | DeclaredPredicate
+    | FunctionTypeAnnotation
+    | FunctionTypeParam
+    | IndexedAccessType
+    | IntersectionTypeAnnotation
+    | NullableTypeAnnotation
+    | ObjectTypeCallProperty
+    | ObjectTypeIndexer
+    | ObjectTypeInternalSlot
+    | ObjectTypeProperty
+    | ObjectTypeSpreadProperty
+    | OpaqueType
+    | OptionalIndexedAccessType
+    | TupleTypeAnnotation
+    | TypeAlias
+    | TypeAnnotation
+    | TypeParameter
+    | TypeParameterInstantiation
+    | TypeofTypeAnnotation
+    | UnionTypeAnnotation;
+  JSXAttribute: JSXOpeningElement;
+  JSXClosingElement: JSXElement;
+  JSXClosingFragment: JSXFragment;
+  JSXElement:
+    | ArrayExpression
+    | ArrowFunctionExpression
+    | AssignmentExpression
+    | AssignmentPattern
+    | AwaitExpression
+    | BinaryExpression
+    | BindExpression
+    | CallExpression
+    | ClassAccessorProperty
+    | ClassDeclaration
+    | ClassExpression
+    | ClassMethod
+    | ClassPrivateProperty
+    | ClassProperty
+    | ConditionalExpression
+    | Decorator
+    | DoWhileStatement
+    | ExportDefaultDeclaration
+    | ExpressionStatement
+    | ForInStatement
+    | ForOfStatement
+    | ForStatement
+    | IfStatement
+    | JSXAttribute
+    | JSXElement
+    | JSXExpressionContainer
+    | JSXFragment
+    | JSXSpreadAttribute
+    | JSXSpreadChild
+    | LogicalExpression
+    | MemberExpression
+    | NewExpression
+    | ObjectMethod
+    | ObjectProperty
+    | OptionalCallExpression
+    | OptionalMemberExpression
+    | ParenthesizedExpression
+    | PipelineBareFunction
+    | PipelineTopicExpression
+    | ReturnStatement
+    | SequenceExpression
+    | SpreadElement
+    | SwitchCase
+    | SwitchStatement
+    | TSAsExpression
+    | TSDeclareMethod
+    | TSEnumDeclaration
+    | TSEnumMember
+    | TSExportAssignment
+    | TSInstantiationExpression
+    | TSMethodSignature
+    | TSNonNullExpression
+    | TSPropertySignature
+    | TSSatisfiesExpression
+    | TSTypeAssertion
+    | TaggedTemplateExpression
+    | TemplateLiteral
+    | ThrowStatement
+    | TupleExpression
+    | TypeCastExpression
+    | UnaryExpression
+    | UpdateExpression
+    | VariableDeclarator
+    | WhileStatement
+    | WithStatement
+    | YieldExpression;
+  JSXEmptyExpression: JSXExpressionContainer;
+  JSXExpressionContainer: JSXAttribute | JSXElement | JSXFragment;
+  JSXFragment:
+    | ArrayExpression
+    | ArrowFunctionExpression
+    | AssignmentExpression
+    | AssignmentPattern
+    | AwaitExpression
+    | BinaryExpression
+    | BindExpression
+    | CallExpression
+    | ClassAccessorProperty
+    | ClassDeclaration
+    | ClassExpression
+    | ClassMethod
+    | ClassPrivateProperty
+    | ClassProperty
+    | ConditionalExpression
+    | Decorator
+    | DoWhileStatement
+    | ExportDefaultDeclaration
+    | ExpressionStatement
+    | ForInStatement
+    | ForOfStatement
+    | ForStatement
+    | IfStatement
+    | JSXAttribute
+    | JSXElement
+    | JSXExpressionContainer
+    | JSXFragment
+    | JSXSpreadAttribute
+    | JSXSpreadChild
+    | LogicalExpression
+    | MemberExpression
+    | NewExpression
+    | ObjectMethod
+    | ObjectProperty
+    | OptionalCallExpression
+    | OptionalMemberExpression
+    | ParenthesizedExpression
+    | PipelineBareFunction
+    | PipelineTopicExpression
+    | ReturnStatement
+    | SequenceExpression
+    | SpreadElement
+    | SwitchCase
+    | SwitchStatement
+    | TSAsExpression
+    | TSDeclareMethod
+    | TSEnumDeclaration
+    | TSEnumMember
+    | TSExportAssignment
+    | TSInstantiationExpression
+    | TSMethodSignature
+    | TSNonNullExpression
+    | TSPropertySignature
+    | TSSatisfiesExpression
+    | TSTypeAssertion
+    | TaggedTemplateExpression
+    | TemplateLiteral
+    | ThrowStatement
+    | TupleExpression
+    | TypeCastExpression
+    | UnaryExpression
+    | UpdateExpression
+    | VariableDeclarator
+    | WhileStatement
+    | WithStatement
+    | YieldExpression;
+  JSXIdentifier:
+    | JSXAttribute
+    | JSXClosingElement
+    | JSXMemberExpression
+    | JSXNamespacedName
+    | JSXOpeningElement;
+  JSXMemberExpression:
+    | JSXClosingElement
+    | JSXMemberExpression
+    | JSXOpeningElement;
+  JSXNamespacedName:
+    | CallExpression
+    | JSXAttribute
+    | JSXClosingElement
+    | JSXOpeningElement
+    | NewExpression
+    | OptionalCallExpression;
+  JSXOpeningElement: JSXElement;
+  JSXOpeningFragment: JSXFragment;
+  JSXSpreadAttribute: JSXOpeningElement;
+  JSXSpreadChild: JSXElement | JSXFragment;
+  JSXText: JSXElement | JSXFragment;
+  LabeledStatement:
+    | BlockStatement
+    | DoWhileStatement
+    | ForInStatement
+    | ForOfStatement
+    | ForStatement
+    | IfStatement
+    | LabeledStatement
+    | Program
+    | StaticBlock
+    | SwitchCase
+    | TSModuleBlock
+    | WhileStatement
+    | WithStatement;
+  LogicalExpression:
+    | ArrayExpression
+    | ArrowFunctionExpression
+    | AssignmentExpression
+    | AssignmentPattern
+    | AwaitExpression
+    | BinaryExpression
+    | BindExpression
+    | CallExpression
+    | ClassAccessorProperty
+    | ClassDeclaration
+    | ClassExpression
+    | ClassMethod
+    | ClassPrivateProperty
+    | ClassProperty
+    | ConditionalExpression
+    | Decorator
+    | DoWhileStatement
+    | ExportDefaultDeclaration
+    | ExpressionStatement
+    | ForInStatement
+    | ForOfStatement
+    | ForStatement
+    | IfStatement
+    | JSXExpressionContainer
+    | JSXSpreadAttribute
+    | JSXSpreadChild
+    | LogicalExpression
+    | MemberExpression
+    | NewExpression
+    | ObjectMethod
+    | ObjectProperty
+    | OptionalCallExpression
+    | OptionalMemberExpression
+    | ParenthesizedExpression
+    | PipelineBareFunction
+    | PipelineTopicExpression
+    | ReturnStatement
+    | SequenceExpression
+    | SpreadElement
+    | SwitchCase
+    | SwitchStatement
+    | TSAsExpression
+    | TSDeclareMethod
+    | TSEnumDeclaration
+    | TSEnumMember
+    | TSExportAssignment
+    | TSInstantiationExpression
+    | TSMethodSignature
+    | TSNonNullExpression
+    | TSPropertySignature
+    | TSSatisfiesExpression
+    | TSTypeAssertion
+    | TaggedTemplateExpression
+    | TemplateLiteral
+    | ThrowStatement
+    | TupleExpression
+    | TypeCastExpression
+    | UnaryExpression
+    | UpdateExpression
+    | VariableDeclarator
+    | WhileStatement
+    | WithStatement
+    | YieldExpression;
+  MemberExpression:
+    | ArrayExpression
+    | ArrayPattern
+    | ArrowFunctionExpression
+    | AssignmentExpression
+    | AssignmentPattern
+    | AwaitExpression
+    | BinaryExpression
+    | BindExpression
+    | CallExpression
+    | ClassAccessorProperty
+    | ClassDeclaration
+    | ClassExpression
+    | ClassMethod
+    | ClassPrivateProperty
+    | ClassProperty
+    | ConditionalExpression
+    | Decorator
+    | DoWhileStatement
+    | ExportDefaultDeclaration
+    | ExpressionStatement
+    | ForInStatement
+    | ForOfStatement
+    | ForStatement
+    | IfStatement
+    | JSXExpressionContainer
+    | JSXSpreadAttribute
+    | JSXSpreadChild
+    | LogicalExpression
+    | MemberExpression
+    | NewExpression
+    | ObjectMethod
+    | ObjectProperty
+    | OptionalCallExpression
+    | OptionalMemberExpression
+    | ParenthesizedExpression
+    | PipelineBareFunction
+    | PipelineTopicExpression
+    | RestElement
+    | ReturnStatement
+    | SequenceExpression
+    | SpreadElement
+    | SwitchCase
+    | SwitchStatement
+    | TSAsExpression
+    | TSDeclareMethod
+    | TSEnumDeclaration
+    | TSEnumMember
+    | TSExportAssignment
+    | TSInstantiationExpression
+    | TSMethodSignature
+    | TSNonNullExpression
+    | TSPropertySignature
+    | TSSatisfiesExpression
+    | TSTypeAssertion
+    | TaggedTemplateExpression
+    | TemplateLiteral
+    | ThrowStatement
+    | TupleExpression
+    | TypeCastExpression
+    | UnaryExpression
+    | UpdateExpression
+    | VariableDeclarator
+    | WhileStatement
+    | WithStatement
+    | YieldExpression;
+  MetaProperty:
+    | ArrayExpression
+    | ArrowFunctionExpression
+    | AssignmentExpression
+    | AssignmentPattern
+    | AwaitExpression
+    | BinaryExpression
+    | BindExpression
+    | CallExpression
+    | ClassAccessorProperty
+    | ClassDeclaration
+    | ClassExpression
+    | ClassMethod
+    | ClassPrivateProperty
+    | ClassProperty
+    | ConditionalExpression
+    | Decorator
+    | DoWhileStatement
+    | ExportDefaultDeclaration
+    | ExpressionStatement
+    | ForInStatement
+    | ForOfStatement
+    | ForStatement
+    | IfStatement
+    | JSXExpressionContainer
+    | JSXSpreadAttribute
+    | JSXSpreadChild
+    | LogicalExpression
+    | MemberExpression
+    | NewExpression
+    | ObjectMethod
+    | ObjectProperty
+    | OptionalCallExpression
+    | OptionalMemberExpression
+    | ParenthesizedExpression
+    | PipelineBareFunction
+    | PipelineTopicExpression
+    | ReturnStatement
+    | SequenceExpression
+    | SpreadElement
+    | SwitchCase
+    | SwitchStatement
+    | TSAsExpression
+    | TSDeclareMethod
+    | TSEnumDeclaration
+    | TSEnumMember
+    | TSExportAssignment
+    | TSInstantiationExpression
+    | TSMethodSignature
+    | TSNonNullExpression
+    | TSPropertySignature
+    | TSSatisfiesExpression
+    | TSTypeAssertion
+    | TaggedTemplateExpression
+    | TemplateLiteral
+    | ThrowStatement
+    | TupleExpression
+    | TypeCastExpression
+    | UnaryExpression
+    | UpdateExpression
+    | VariableDeclarator
+    | WhileStatement
+    | WithStatement
+    | YieldExpression;
+  MixedTypeAnnotation:
+    | ArrayTypeAnnotation
+    | DeclareExportDeclaration
+    | DeclareOpaqueType
+    | DeclareTypeAlias
+    | DeclaredPredicate
+    | FunctionTypeAnnotation
+    | FunctionTypeParam
+    | IndexedAccessType
+    | IntersectionTypeAnnotation
+    | NullableTypeAnnotation
+    | ObjectTypeCallProperty
+    | ObjectTypeIndexer
+    | ObjectTypeInternalSlot
+    | ObjectTypeProperty
+    | ObjectTypeSpreadProperty
+    | OpaqueType
+    | OptionalIndexedAccessType
+    | TupleTypeAnnotation
+    | TypeAlias
+    | TypeAnnotation
+    | TypeParameter
+    | TypeParameterInstantiation
+    | TypeofTypeAnnotation
+    | UnionTypeAnnotation;
+  ModuleExpression:
+    | ArrayExpression
+    | ArrowFunctionExpression
+    | AssignmentExpression
+    | AssignmentPattern
+    | AwaitExpression
+    | BinaryExpression
+    | BindExpression
+    | CallExpression
+    | ClassAccessorProperty
+    | ClassDeclaration
+    | ClassExpression
+    | ClassMethod
+    | ClassPrivateProperty
+    | ClassProperty
+    | ConditionalExpression
+    | Decorator
+    | DoWhileStatement
+    | ExportDefaultDeclaration
+    | ExpressionStatement
+    | ForInStatement
+    | ForOfStatement
+    | ForStatement
+    | IfStatement
+    | JSXExpressionContainer
+    | JSXSpreadAttribute
+    | JSXSpreadChild
+    | LogicalExpression
+    | MemberExpression
+    | NewExpression
+    | ObjectMethod
+    | ObjectProperty
+    | OptionalCallExpression
+    | OptionalMemberExpression
+    | ParenthesizedExpression
+    | PipelineBareFunction
+    | PipelineTopicExpression
+    | ReturnStatement
+    | SequenceExpression
+    | SpreadElement
+    | SwitchCase
+    | SwitchStatement
+    | TSAsExpression
+    | TSDeclareMethod
+    | TSEnumDeclaration
+    | TSEnumMember
+    | TSExportAssignment
+    | TSInstantiationExpression
+    | TSMethodSignature
+    | TSNonNullExpression
+    | TSPropertySignature
+    | TSSatisfiesExpression
+    | TSTypeAssertion
+    | TaggedTemplateExpression
+    | TemplateLiteral
+    | ThrowStatement
+    | TupleExpression
+    | TypeCastExpression
+    | UnaryExpression
+    | UpdateExpression
+    | VariableDeclarator
+    | WhileStatement
+    | WithStatement
+    | YieldExpression;
+  NewExpression:
+    | ArrayExpression
+    | ArrowFunctionExpression
+    | AssignmentExpression
+    | AssignmentPattern
+    | AwaitExpression
+    | BinaryExpression
+    | BindExpression
+    | CallExpression
+    | ClassAccessorProperty
+    | ClassDeclaration
+    | ClassExpression
+    | ClassMethod
+    | ClassPrivateProperty
+    | ClassProperty
+    | ConditionalExpression
+    | Decorator
+    | DoWhileStatement
+    | ExportDefaultDeclaration
+    | ExpressionStatement
+    | ForInStatement
+    | ForOfStatement
+    | ForStatement
+    | IfStatement
+    | JSXExpressionContainer
+    | JSXSpreadAttribute
+    | JSXSpreadChild
+    | LogicalExpression
+    | MemberExpression
+    | NewExpression
+    | ObjectMethod
+    | ObjectProperty
+    | OptionalCallExpression
+    | OptionalMemberExpression
+    | ParenthesizedExpression
+    | PipelineBareFunction
+    | PipelineTopicExpression
+    | ReturnStatement
+    | SequenceExpression
+    | SpreadElement
+    | SwitchCase
+    | SwitchStatement
+    | TSAsExpression
+    | TSDeclareMethod
+    | TSEnumDeclaration
+    | TSEnumMember
+    | TSExportAssignment
+    | TSInstantiationExpression
+    | TSMethodSignature
+    | TSNonNullExpression
+    | TSPropertySignature
+    | TSSatisfiesExpression
+    | TSTypeAssertion
+    | TaggedTemplateExpression
+    | TemplateLiteral
+    | ThrowStatement
+    | TupleExpression
+    | TypeCastExpression
+    | UnaryExpression
+    | UpdateExpression
+    | VariableDeclarator
+    | WhileStatement
+    | WithStatement
+    | YieldExpression;
+  Noop:
+    | ArrayPattern
+    | ArrowFunctionExpression
+    | AssignmentPattern
+    | ClassAccessorProperty
+    | ClassDeclaration
+    | ClassExpression
+    | ClassMethod
+    | ClassPrivateMethod
+    | ClassPrivateProperty
+    | ClassProperty
+    | FunctionDeclaration
+    | FunctionExpression
+    | Identifier
+    | ObjectMethod
+    | ObjectPattern
+    | RestElement
+    | TSDeclareFunction
+    | TSDeclareMethod;
+  NullLiteral:
+    | ArrayExpression
+    | ArrowFunctionExpression
+    | AssignmentExpression
+    | AssignmentPattern
+    | AwaitExpression
+    | BinaryExpression
+    | BindExpression
+    | CallExpression
+    | ClassAccessorProperty
+    | ClassDeclaration
+    | ClassExpression
+    | ClassMethod
+    | ClassPrivateProperty
+    | ClassProperty
+    | ConditionalExpression
+    | Decorator
+    | DoWhileStatement
+    | ExportDefaultDeclaration
+    | ExpressionStatement
+    | ForInStatement
+    | ForOfStatement
+    | ForStatement
+    | IfStatement
+    | JSXExpressionContainer
+    | JSXSpreadAttribute
+    | JSXSpreadChild
+    | LogicalExpression
+    | MemberExpression
+    | NewExpression
+    | ObjectMethod
+    | ObjectProperty
+    | OptionalCallExpression
+    | OptionalMemberExpression
+    | ParenthesizedExpression
+    | PipelineBareFunction
+    | PipelineTopicExpression
+    | ReturnStatement
+    | SequenceExpression
+    | SpreadElement
+    | SwitchCase
+    | SwitchStatement
+    | TSAsExpression
+    | TSDeclareMethod
+    | TSEnumDeclaration
+    | TSEnumMember
+    | TSExportAssignment
+    | TSInstantiationExpression
+    | TSMethodSignature
+    | TSNonNullExpression
+    | TSPropertySignature
+    | TSSatisfiesExpression
+    | TSTypeAssertion
+    | TaggedTemplateExpression
+    | TemplateLiteral
+    | ThrowStatement
+    | TupleExpression
+    | TypeCastExpression
+    | UnaryExpression
+    | UpdateExpression
+    | VariableDeclarator
+    | WhileStatement
+    | WithStatement
+    | YieldExpression;
+  NullLiteralTypeAnnotation:
+    | ArrayTypeAnnotation
+    | DeclareExportDeclaration
+    | DeclareOpaqueType
+    | DeclareTypeAlias
+    | DeclaredPredicate
+    | FunctionTypeAnnotation
+    | FunctionTypeParam
+    | IndexedAccessType
+    | IntersectionTypeAnnotation
+    | NullableTypeAnnotation
+    | ObjectTypeCallProperty
+    | ObjectTypeIndexer
+    | ObjectTypeInternalSlot
+    | ObjectTypeProperty
+    | ObjectTypeSpreadProperty
+    | OpaqueType
+    | OptionalIndexedAccessType
+    | TupleTypeAnnotation
+    | TypeAlias
+    | TypeAnnotation
+    | TypeParameter
+    | TypeParameterInstantiation
+    | TypeofTypeAnnotation
+    | UnionTypeAnnotation;
+  NullableTypeAnnotation:
+    | ArrayTypeAnnotation
+    | DeclareExportDeclaration
+    | DeclareOpaqueType
+    | DeclareTypeAlias
+    | DeclaredPredicate
+    | FunctionTypeAnnotation
+    | FunctionTypeParam
+    | IndexedAccessType
+    | IntersectionTypeAnnotation
+    | NullableTypeAnnotation
+    | ObjectTypeCallProperty
+    | ObjectTypeIndexer
+    | ObjectTypeInternalSlot
+    | ObjectTypeProperty
+    | ObjectTypeSpreadProperty
+    | OpaqueType
+    | OptionalIndexedAccessType
+    | TupleTypeAnnotation
+    | TypeAlias
+    | TypeAnnotation
+    | TypeParameter
+    | TypeParameterInstantiation
+    | TypeofTypeAnnotation
+    | UnionTypeAnnotation;
+  NumberLiteral: null;
+  NumberLiteralTypeAnnotation:
+    | ArrayTypeAnnotation
+    | DeclareExportDeclaration
+    | DeclareOpaqueType
+    | DeclareTypeAlias
+    | DeclaredPredicate
+    | FunctionTypeAnnotation
+    | FunctionTypeParam
+    | IndexedAccessType
+    | IntersectionTypeAnnotation
+    | NullableTypeAnnotation
+    | ObjectTypeCallProperty
+    | ObjectTypeIndexer
+    | ObjectTypeInternalSlot
+    | ObjectTypeProperty
+    | ObjectTypeSpreadProperty
+    | OpaqueType
+    | OptionalIndexedAccessType
+    | TupleTypeAnnotation
+    | TypeAlias
+    | TypeAnnotation
+    | TypeParameter
+    | TypeParameterInstantiation
+    | TypeofTypeAnnotation
+    | UnionTypeAnnotation;
+  NumberTypeAnnotation:
+    | ArrayTypeAnnotation
+    | DeclareExportDeclaration
+    | DeclareOpaqueType
+    | DeclareTypeAlias
+    | DeclaredPredicate
+    | FunctionTypeAnnotation
+    | FunctionTypeParam
+    | IndexedAccessType
+    | IntersectionTypeAnnotation
+    | NullableTypeAnnotation
+    | ObjectTypeCallProperty
+    | ObjectTypeIndexer
+    | ObjectTypeInternalSlot
+    | ObjectTypeProperty
+    | ObjectTypeSpreadProperty
+    | OpaqueType
+    | OptionalIndexedAccessType
+    | TupleTypeAnnotation
+    | TypeAlias
+    | TypeAnnotation
+    | TypeParameter
+    | TypeParameterInstantiation
+    | TypeofTypeAnnotation
+    | UnionTypeAnnotation;
+  NumericLiteral:
+    | ArrayExpression
+    | ArrowFunctionExpression
+    | AssignmentExpression
+    | AssignmentPattern
+    | AwaitExpression
+    | BinaryExpression
+    | BindExpression
+    | CallExpression
+    | ClassAccessorProperty
+    | ClassDeclaration
+    | ClassExpression
+    | ClassMethod
+    | ClassPrivateProperty
+    | ClassProperty
+    | ConditionalExpression
+    | Decorator
+    | DoWhileStatement
+    | EnumNumberMember
+    | ExportDefaultDeclaration
+    | ExpressionStatement
+    | ForInStatement
+    | ForOfStatement
+    | ForStatement
+    | IfStatement
+    | JSXExpressionContainer
+    | JSXSpreadAttribute
+    | JSXSpreadChild
+    | LogicalExpression
+    | MemberExpression
+    | NewExpression
+    | ObjectMethod
+    | ObjectProperty
+    | OptionalCallExpression
+    | OptionalMemberExpression
+    | ParenthesizedExpression
+    | PipelineBareFunction
+    | PipelineTopicExpression
+    | ReturnStatement
+    | SequenceExpression
+    | SpreadElement
+    | SwitchCase
+    | SwitchStatement
+    | TSAsExpression
+    | TSDeclareMethod
+    | TSEnumDeclaration
+    | TSEnumMember
+    | TSExportAssignment
+    | TSInstantiationExpression
+    | TSLiteralType
+    | TSMethodSignature
+    | TSNonNullExpression
+    | TSPropertySignature
+    | TSSatisfiesExpression
+    | TSTypeAssertion
+    | TaggedTemplateExpression
+    | TemplateLiteral
+    | ThrowStatement
+    | TupleExpression
+    | TypeCastExpression
+    | UnaryExpression
+    | UpdateExpression
+    | VariableDeclarator
+    | WhileStatement
+    | WithStatement
+    | YieldExpression;
+  ObjectExpression:
+    | ArrayExpression
+    | ArrowFunctionExpression
+    | AssignmentExpression
+    | AssignmentPattern
+    | AwaitExpression
+    | BinaryExpression
+    | BindExpression
+    | CallExpression
+    | ClassAccessorProperty
+    | ClassDeclaration
+    | ClassExpression
+    | ClassMethod
+    | ClassPrivateProperty
+    | ClassProperty
+    | ConditionalExpression
+    | Decorator
+    | DoWhileStatement
+    | ExportDefaultDeclaration
+    | ExpressionStatement
+    | ForInStatement
+    | ForOfStatement
+    | ForStatement
+    | IfStatement
+    | JSXExpressionContainer
+    | JSXSpreadAttribute
+    | JSXSpreadChild
+    | LogicalExpression
+    | MemberExpression
+    | NewExpression
+    | ObjectMethod
+    | ObjectProperty
+    | OptionalCallExpression
+    | OptionalMemberExpression
+    | ParenthesizedExpression
+    | PipelineBareFunction
+    | PipelineTopicExpression
+    | ReturnStatement
+    | SequenceExpression
+    | SpreadElement
+    | SwitchCase
+    | SwitchStatement
+    | TSAsExpression
+    | TSDeclareMethod
+    | TSEnumDeclaration
+    | TSEnumMember
+    | TSExportAssignment
+    | TSInstantiationExpression
+    | TSMethodSignature
+    | TSNonNullExpression
+    | TSPropertySignature
+    | TSSatisfiesExpression
+    | TSTypeAssertion
+    | TaggedTemplateExpression
+    | TemplateLiteral
+    | ThrowStatement
+    | TupleExpression
+    | TypeCastExpression
+    | UnaryExpression
+    | UpdateExpression
+    | VariableDeclarator
+    | WhileStatement
+    | WithStatement
+    | YieldExpression;
+  ObjectMethod: ObjectExpression;
+  ObjectPattern:
+    | ArrayPattern
+    | ArrowFunctionExpression
+    | AssignmentExpression
+    | AssignmentPattern
+    | CatchClause
+    | ClassMethod
+    | ClassPrivateMethod
+    | ForInStatement
+    | ForOfStatement
+    | FunctionDeclaration
+    | FunctionExpression
+    | ObjectMethod
+    | ObjectProperty
+    | RestElement
+    | TSDeclareFunction
+    | TSDeclareMethod
+    | VariableDeclarator;
+  ObjectProperty: ObjectExpression | ObjectPattern | RecordExpression;
+  ObjectTypeAnnotation:
+    | ArrayTypeAnnotation
+    | DeclareClass
+    | DeclareExportDeclaration
+    | DeclareInterface
+    | DeclareOpaqueType
+    | DeclareTypeAlias
+    | DeclaredPredicate
+    | FunctionTypeAnnotation
+    | FunctionTypeParam
+    | IndexedAccessType
+    | InterfaceDeclaration
+    | InterfaceTypeAnnotation
+    | IntersectionTypeAnnotation
+    | NullableTypeAnnotation
+    | ObjectTypeCallProperty
+    | ObjectTypeIndexer
+    | ObjectTypeInternalSlot
+    | ObjectTypeProperty
+    | ObjectTypeSpreadProperty
+    | OpaqueType
+    | OptionalIndexedAccessType
+    | TupleTypeAnnotation
+    | TypeAlias
+    | TypeAnnotation
+    | TypeParameter
+    | TypeParameterInstantiation
+    | TypeofTypeAnnotation
+    | UnionTypeAnnotation;
+  ObjectTypeCallProperty:
+    | DeclareExportDeclaration
+    | DeclaredPredicate
+    | ObjectTypeAnnotation;
+  ObjectTypeIndexer:
+    | DeclareExportDeclaration
+    | DeclaredPredicate
+    | ObjectTypeAnnotation;
+  ObjectTypeInternalSlot:
+    | DeclareExportDeclaration
+    | DeclaredPredicate
+    | ObjectTypeAnnotation;
+  ObjectTypeProperty:
+    | DeclareExportDeclaration
+    | DeclaredPredicate
+    | ObjectTypeAnnotation;
+  ObjectTypeSpreadProperty:
+    | DeclareExportDeclaration
+    | DeclaredPredicate
+    | ObjectTypeAnnotation;
+  OpaqueType:
+    | BlockStatement
+    | DeclareExportDeclaration
+    | DeclaredPredicate
+    | DoWhileStatement
+    | ExportNamedDeclaration
+    | ForInStatement
+    | ForOfStatement
+    | ForStatement
+    | IfStatement
+    | LabeledStatement
+    | Program
+    | StaticBlock
+    | SwitchCase
+    | TSModuleBlock
+    | WhileStatement
+    | WithStatement;
+  OptionalCallExpression:
+    | ArrayExpression
+    | ArrowFunctionExpression
+    | AssignmentExpression
+    | AssignmentPattern
+    | AwaitExpression
+    | BinaryExpression
+    | BindExpression
+    | CallExpression
+    | ClassAccessorProperty
+    | ClassDeclaration
+    | ClassExpression
+    | ClassMethod
+    | ClassPrivateProperty
+    | ClassProperty
+    | ConditionalExpression
+    | Decorator
+    | DoWhileStatement
+    | ExportDefaultDeclaration
+    | ExpressionStatement
+    | ForInStatement
+    | ForOfStatement
+    | ForStatement
+    | IfStatement
+    | JSXExpressionContainer
+    | JSXSpreadAttribute
+    | JSXSpreadChild
+    | LogicalExpression
+    | MemberExpression
+    | NewExpression
+    | ObjectMethod
+    | ObjectProperty
+    | OptionalCallExpression
+    | OptionalMemberExpression
+    | ParenthesizedExpression
+    | PipelineBareFunction
+    | PipelineTopicExpression
+    | ReturnStatement
+    | SequenceExpression
+    | SpreadElement
+    | SwitchCase
+    | SwitchStatement
+    | TSAsExpression
+    | TSDeclareMethod
+    | TSEnumDeclaration
+    | TSEnumMember
+    | TSExportAssignment
+    | TSInstantiationExpression
+    | TSMethodSignature
+    | TSNonNullExpression
+    | TSPropertySignature
+    | TSSatisfiesExpression
+    | TSTypeAssertion
+    | TaggedTemplateExpression
+    | TemplateLiteral
+    | ThrowStatement
+    | TupleExpression
+    | TypeCastExpression
+    | UnaryExpression
+    | UpdateExpression
+    | VariableDeclarator
+    | WhileStatement
+    | WithStatement
+    | YieldExpression;
+  OptionalIndexedAccessType:
+    | ArrayTypeAnnotation
+    | DeclareExportDeclaration
+    | DeclareOpaqueType
+    | DeclareTypeAlias
+    | DeclaredPredicate
+    | FunctionTypeAnnotation
+    | FunctionTypeParam
+    | IndexedAccessType
+    | IntersectionTypeAnnotation
+    | NullableTypeAnnotation
+    | ObjectTypeCallProperty
+    | ObjectTypeIndexer
+    | ObjectTypeInternalSlot
+    | ObjectTypeProperty
+    | ObjectTypeSpreadProperty
+    | OpaqueType
+    | OptionalIndexedAccessType
+    | TupleTypeAnnotation
+    | TypeAlias
+    | TypeAnnotation
+    | TypeParameter
+    | TypeParameterInstantiation
+    | TypeofTypeAnnotation
+    | UnionTypeAnnotation;
+  OptionalMemberExpression:
+    | ArrayExpression
+    | ArrowFunctionExpression
+    | AssignmentExpression
+    | AssignmentPattern
+    | AwaitExpression
+    | BinaryExpression
+    | BindExpression
+    | CallExpression
+    | ClassAccessorProperty
+    | ClassDeclaration
+    | ClassExpression
+    | ClassMethod
+    | ClassPrivateProperty
+    | ClassProperty
+    | ConditionalExpression
+    | Decorator
+    | DoWhileStatement
+    | ExportDefaultDeclaration
+    | ExpressionStatement
+    | ForInStatement
+    | ForOfStatement
+    | ForStatement
+    | IfStatement
+    | JSXExpressionContainer
+    | JSXSpreadAttribute
+    | JSXSpreadChild
+    | LogicalExpression
+    | MemberExpression
+    | NewExpression
+    | ObjectMethod
+    | ObjectProperty
+    | OptionalCallExpression
+    | OptionalMemberExpression
+    | ParenthesizedExpression
+    | PipelineBareFunction
+    | PipelineTopicExpression
+    | ReturnStatement
+    | SequenceExpression
+    | SpreadElement
+    | SwitchCase
+    | SwitchStatement
+    | TSAsExpression
+    | TSDeclareMethod
+    | TSEnumDeclaration
+    | TSEnumMember
+    | TSExportAssignment
+    | TSInstantiationExpression
+    | TSMethodSignature
+    | TSNonNullExpression
+    | TSPropertySignature
+    | TSSatisfiesExpression
+    | TSTypeAssertion
+    | TaggedTemplateExpression
+    | TemplateLiteral
+    | ThrowStatement
+    | TupleExpression
+    | TypeCastExpression
+    | UnaryExpression
+    | UpdateExpression
+    | VariableDeclarator
+    | WhileStatement
+    | WithStatement
+    | YieldExpression;
+  ParenthesizedExpression:
+    | ArrayExpression
+    | ArrowFunctionExpression
+    | AssignmentExpression
+    | AssignmentPattern
+    | AwaitExpression
+    | BinaryExpression
+    | BindExpression
+    | CallExpression
+    | ClassAccessorProperty
+    | ClassDeclaration
+    | ClassExpression
+    | ClassMethod
+    | ClassPrivateProperty
+    | ClassProperty
+    | ConditionalExpression
+    | Decorator
+    | DoWhileStatement
+    | ExportDefaultDeclaration
+    | ExpressionStatement
+    | ForInStatement
+    | ForOfStatement
+    | ForStatement
+    | IfStatement
+    | JSXExpressionContainer
+    | JSXSpreadAttribute
+    | JSXSpreadChild
+    | LogicalExpression
+    | MemberExpression
+    | NewExpression
+    | ObjectMethod
+    | ObjectProperty
+    | OptionalCallExpression
+    | OptionalMemberExpression
+    | ParenthesizedExpression
+    | PipelineBareFunction
+    | PipelineTopicExpression
+    | ReturnStatement
+    | SequenceExpression
+    | SpreadElement
+    | SwitchCase
+    | SwitchStatement
+    | TSAsExpression
+    | TSDeclareMethod
+    | TSEnumDeclaration
+    | TSEnumMember
+    | TSExportAssignment
+    | TSInstantiationExpression
+    | TSMethodSignature
+    | TSNonNullExpression
+    | TSPropertySignature
+    | TSSatisfiesExpression
+    | TSTypeAssertion
+    | TaggedTemplateExpression
+    | TemplateLiteral
+    | ThrowStatement
+    | TupleExpression
+    | TypeCastExpression
+    | UnaryExpression
+    | UpdateExpression
+    | VariableDeclarator
+    | WhileStatement
+    | WithStatement
+    | YieldExpression;
+  PipelineBareFunction:
+    | ArrayExpression
+    | ArrowFunctionExpression
+    | AssignmentExpression
+    | AssignmentPattern
+    | AwaitExpression
+    | BinaryExpression
+    | BindExpression
+    | CallExpression
+    | ClassAccessorProperty
+    | ClassDeclaration
+    | ClassExpression
+    | ClassMethod
+    | ClassPrivateProperty
+    | ClassProperty
+    | ConditionalExpression
+    | Decorator
+    | DoWhileStatement
+    | ExportDefaultDeclaration
+    | ExpressionStatement
+    | ForInStatement
+    | ForOfStatement
+    | ForStatement
+    | IfStatement
+    | JSXExpressionContainer
+    | JSXSpreadAttribute
+    | JSXSpreadChild
+    | LogicalExpression
+    | MemberExpression
+    | NewExpression
+    | ObjectMethod
+    | ObjectProperty
+    | OptionalCallExpression
+    | OptionalMemberExpression
+    | ParenthesizedExpression
+    | PipelineBareFunction
+    | PipelineTopicExpression
+    | ReturnStatement
+    | SequenceExpression
+    | SpreadElement
+    | SwitchCase
+    | SwitchStatement
+    | TSAsExpression
+    | TSDeclareMethod
+    | TSEnumDeclaration
+    | TSEnumMember
+    | TSExportAssignment
+    | TSInstantiationExpression
+    | TSMethodSignature
+    | TSNonNullExpression
+    | TSPropertySignature
+    | TSSatisfiesExpression
+    | TSTypeAssertion
+    | TaggedTemplateExpression
+    | TemplateLiteral
+    | ThrowStatement
+    | TupleExpression
+    | TypeCastExpression
+    | UnaryExpression
+    | UpdateExpression
+    | VariableDeclarator
+    | WhileStatement
+    | WithStatement
+    | YieldExpression;
+  PipelinePrimaryTopicReference:
+    | ArrayExpression
+    | ArrowFunctionExpression
+    | AssignmentExpression
+    | AssignmentPattern
+    | AwaitExpression
+    | BinaryExpression
+    | BindExpression
+    | CallExpression
+    | ClassAccessorProperty
+    | ClassDeclaration
+    | ClassExpression
+    | ClassMethod
+    | ClassPrivateProperty
+    | ClassProperty
+    | ConditionalExpression
+    | Decorator
+    | DoWhileStatement
+    | ExportDefaultDeclaration
+    | ExpressionStatement
+    | ForInStatement
+    | ForOfStatement
+    | ForStatement
+    | IfStatement
+    | JSXExpressionContainer
+    | JSXSpreadAttribute
+    | JSXSpreadChild
+    | LogicalExpression
+    | MemberExpression
+    | NewExpression
+    | ObjectMethod
+    | ObjectProperty
+    | OptionalCallExpression
+    | OptionalMemberExpression
+    | ParenthesizedExpression
+    | PipelineBareFunction
+    | PipelineTopicExpression
+    | ReturnStatement
+    | SequenceExpression
+    | SpreadElement
+    | SwitchCase
+    | SwitchStatement
+    | TSAsExpression
+    | TSDeclareMethod
+    | TSEnumDeclaration
+    | TSEnumMember
+    | TSExportAssignment
+    | TSInstantiationExpression
+    | TSMethodSignature
+    | TSNonNullExpression
+    | TSPropertySignature
+    | TSSatisfiesExpression
+    | TSTypeAssertion
+    | TaggedTemplateExpression
+    | TemplateLiteral
+    | ThrowStatement
+    | TupleExpression
+    | TypeCastExpression
+    | UnaryExpression
+    | UpdateExpression
+    | VariableDeclarator
+    | WhileStatement
+    | WithStatement
+    | YieldExpression;
+  PipelineTopicExpression:
+    | ArrayExpression
+    | ArrowFunctionExpression
+    | AssignmentExpression
+    | AssignmentPattern
+    | AwaitExpression
+    | BinaryExpression
+    | BindExpression
+    | CallExpression
+    | ClassAccessorProperty
+    | ClassDeclaration
+    | ClassExpression
+    | ClassMethod
+    | ClassPrivateProperty
+    | ClassProperty
+    | ConditionalExpression
+    | Decorator
+    | DoWhileStatement
+    | ExportDefaultDeclaration
+    | ExpressionStatement
+    | ForInStatement
+    | ForOfStatement
+    | ForStatement
+    | IfStatement
+    | JSXExpressionContainer
+    | JSXSpreadAttribute
+    | JSXSpreadChild
+    | LogicalExpression
+    | MemberExpression
+    | NewExpression
+    | ObjectMethod
+    | ObjectProperty
+    | OptionalCallExpression
+    | OptionalMemberExpression
+    | ParenthesizedExpression
+    | PipelineBareFunction
+    | PipelineTopicExpression
+    | ReturnStatement
+    | SequenceExpression
+    | SpreadElement
+    | SwitchCase
+    | SwitchStatement
+    | TSAsExpression
+    | TSDeclareMethod
+    | TSEnumDeclaration
+    | TSEnumMember
+    | TSExportAssignment
+    | TSInstantiationExpression
+    | TSMethodSignature
+    | TSNonNullExpression
+    | TSPropertySignature
+    | TSSatisfiesExpression
+    | TSTypeAssertion
+    | TaggedTemplateExpression
+    | TemplateLiteral
+    | ThrowStatement
+    | TupleExpression
+    | TypeCastExpression
+    | UnaryExpression
+    | UpdateExpression
+    | VariableDeclarator
+    | WhileStatement
+    | WithStatement
+    | YieldExpression;
+  Placeholder: Node;
+  PrivateName:
+    | BinaryExpression
+    | ClassAccessorProperty
+    | ClassPrivateMethod
+    | ClassPrivateProperty
+    | MemberExpression
+    | ObjectProperty;
+  Program: File | ModuleExpression;
+  QualifiedTypeIdentifier:
+    | DeclareExportDeclaration
+    | DeclaredPredicate
+    | GenericTypeAnnotation
+    | InterfaceExtends
+    | QualifiedTypeIdentifier;
+  RecordExpression:
+    | ArrayExpression
+    | ArrowFunctionExpression
+    | AssignmentExpression
+    | AssignmentPattern
+    | AwaitExpression
+    | BinaryExpression
+    | BindExpression
+    | CallExpression
+    | ClassAccessorProperty
+    | ClassDeclaration
+    | ClassExpression
+    | ClassMethod
+    | ClassPrivateProperty
+    | ClassProperty
+    | ConditionalExpression
+    | Decorator
+    | DoWhileStatement
+    | ExportDefaultDeclaration
+    | ExpressionStatement
+    | ForInStatement
+    | ForOfStatement
+    | ForStatement
+    | IfStatement
+    | JSXExpressionContainer
+    | JSXSpreadAttribute
+    | JSXSpreadChild
+    | LogicalExpression
+    | MemberExpression
+    | NewExpression
+    | ObjectMethod
+    | ObjectProperty
+    | OptionalCallExpression
+    | OptionalMemberExpression
+    | ParenthesizedExpression
+    | PipelineBareFunction
+    | PipelineTopicExpression
+    | ReturnStatement
+    | SequenceExpression
+    | SpreadElement
+    | SwitchCase
+    | SwitchStatement
+    | TSAsExpression
+    | TSDeclareMethod
+    | TSEnumDeclaration
+    | TSEnumMember
+    | TSExportAssignment
+    | TSInstantiationExpression
+    | TSMethodSignature
+    | TSNonNullExpression
+    | TSPropertySignature
+    | TSSatisfiesExpression
+    | TSTypeAssertion
+    | TaggedTemplateExpression
+    | TemplateLiteral
+    | ThrowStatement
+    | TupleExpression
+    | TypeCastExpression
+    | UnaryExpression
+    | UpdateExpression
+    | VariableDeclarator
+    | WhileStatement
+    | WithStatement
+    | YieldExpression;
+  RegExpLiteral:
+    | ArrayExpression
+    | ArrowFunctionExpression
+    | AssignmentExpression
+    | AssignmentPattern
+    | AwaitExpression
+    | BinaryExpression
+    | BindExpression
+    | CallExpression
+    | ClassAccessorProperty
+    | ClassDeclaration
+    | ClassExpression
+    | ClassMethod
+    | ClassPrivateProperty
+    | ClassProperty
+    | ConditionalExpression
+    | Decorator
+    | DoWhileStatement
+    | ExportDefaultDeclaration
+    | ExpressionStatement
+    | ForInStatement
+    | ForOfStatement
+    | ForStatement
+    | IfStatement
+    | JSXExpressionContainer
+    | JSXSpreadAttribute
+    | JSXSpreadChild
+    | LogicalExpression
+    | MemberExpression
+    | NewExpression
+    | ObjectMethod
+    | ObjectProperty
+    | OptionalCallExpression
+    | OptionalMemberExpression
+    | ParenthesizedExpression
+    | PipelineBareFunction
+    | PipelineTopicExpression
+    | ReturnStatement
+    | SequenceExpression
+    | SpreadElement
+    | SwitchCase
+    | SwitchStatement
+    | TSAsExpression
+    | TSDeclareMethod
+    | TSEnumDeclaration
+    | TSEnumMember
+    | TSExportAssignment
+    | TSInstantiationExpression
+    | TSMethodSignature
+    | TSNonNullExpression
+    | TSPropertySignature
+    | TSSatisfiesExpression
+    | TSTypeAssertion
+    | TaggedTemplateExpression
+    | TemplateLiteral
+    | ThrowStatement
+    | TupleExpression
+    | TypeCastExpression
+    | UnaryExpression
+    | UpdateExpression
+    | VariableDeclarator
+    | WhileStatement
+    | WithStatement
+    | YieldExpression;
+  RegexLiteral: null;
+  RestElement:
+    | ArrayPattern
+    | ArrowFunctionExpression
+    | AssignmentExpression
+    | ClassMethod
+    | ClassPrivateMethod
+    | ForInStatement
+    | ForOfStatement
+    | FunctionDeclaration
+    | FunctionExpression
+    | ObjectMethod
+    | ObjectPattern
+    | ObjectProperty
+    | RestElement
+    | TSCallSignatureDeclaration
+    | TSConstructSignatureDeclaration
+    | TSConstructorType
+    | TSDeclareFunction
+    | TSDeclareMethod
+    | TSFunctionType
+    | TSMethodSignature
+    | VariableDeclarator;
+  RestProperty: null;
+  ReturnStatement:
+    | BlockStatement
+    | DoWhileStatement
+    | ForInStatement
+    | ForOfStatement
+    | ForStatement
+    | IfStatement
+    | LabeledStatement
+    | Program
+    | StaticBlock
+    | SwitchCase
+    | TSModuleBlock
+    | WhileStatement
+    | WithStatement;
+  SequenceExpression:
+    | ArrayExpression
+    | ArrowFunctionExpression
+    | AssignmentExpression
+    | AssignmentPattern
+    | AwaitExpression
+    | BinaryExpression
+    | BindExpression
+    | CallExpression
+    | ClassAccessorProperty
+    | ClassDeclaration
+    | ClassExpression
+    | ClassMethod
+    | ClassPrivateProperty
+    | ClassProperty
+    | ConditionalExpression
+    | Decorator
+    | DoWhileStatement
+    | ExportDefaultDeclaration
+    | ExpressionStatement
+    | ForInStatement
+    | ForOfStatement
+    | ForStatement
+    | IfStatement
+    | JSXExpressionContainer
+    | JSXSpreadAttribute
+    | JSXSpreadChild
+    | LogicalExpression
+    | MemberExpression
+    | NewExpression
+    | ObjectMethod
+    | ObjectProperty
+    | OptionalCallExpression
+    | OptionalMemberExpression
+    | ParenthesizedExpression
+    | PipelineBareFunction
+    | PipelineTopicExpression
+    | ReturnStatement
+    | SequenceExpression
+    | SpreadElement
+    | SwitchCase
+    | SwitchStatement
+    | TSAsExpression
+    | TSDeclareMethod
+    | TSEnumDeclaration
+    | TSEnumMember
+    | TSExportAssignment
+    | TSInstantiationExpression
+    | TSMethodSignature
+    | TSNonNullExpression
+    | TSPropertySignature
+    | TSSatisfiesExpression
+    | TSTypeAssertion
+    | TaggedTemplateExpression
+    | TemplateLiteral
+    | ThrowStatement
+    | TupleExpression
+    | TypeCastExpression
+    | UnaryExpression
+    | UpdateExpression
+    | VariableDeclarator
+    | WhileStatement
+    | WithStatement
+    | YieldExpression;
+  SpreadElement:
+    | ArrayExpression
+    | CallExpression
+    | NewExpression
+    | ObjectExpression
+    | OptionalCallExpression
+    | RecordExpression
+    | TupleExpression;
+  SpreadProperty: null;
+  StaticBlock: ClassBody;
+  StringLiteral:
+    | ArrayExpression
+    | ArrowFunctionExpression
+    | AssignmentExpression
+    | AssignmentPattern
+    | AwaitExpression
+    | BinaryExpression
+    | BindExpression
+    | CallExpression
+    | ClassAccessorProperty
+    | ClassDeclaration
+    | ClassExpression
+    | ClassMethod
+    | ClassPrivateProperty
+    | ClassProperty
+    | ConditionalExpression
+    | DeclareExportAllDeclaration
+    | DeclareExportDeclaration
+    | DeclareModule
+    | Decorator
+    | DoWhileStatement
+    | EnumStringMember
+    | ExportAllDeclaration
+    | ExportDefaultDeclaration
+    | ExportNamedDeclaration
+    | ExportSpecifier
+    | ExpressionStatement
+    | ForInStatement
+    | ForOfStatement
+    | ForStatement
+    | IfStatement
+    | ImportAttribute
+    | ImportDeclaration
+    | ImportSpecifier
+    | JSXAttribute
+    | JSXExpressionContainer
+    | JSXSpreadAttribute
+    | JSXSpreadChild
+    | LogicalExpression
+    | MemberExpression
+    | NewExpression
+    | ObjectMethod
+    | ObjectProperty
+    | ObjectTypeProperty
+    | OptionalCallExpression
+    | OptionalMemberExpression
+    | ParenthesizedExpression
+    | PipelineBareFunction
+    | PipelineTopicExpression
+    | ReturnStatement
+    | SequenceExpression
+    | SpreadElement
+    | SwitchCase
+    | SwitchStatement
+    | TSAsExpression
+    | TSDeclareMethod
+    | TSEnumDeclaration
+    | TSEnumMember
+    | TSExportAssignment
+    | TSExternalModuleReference
+    | TSImportType
+    | TSInstantiationExpression
+    | TSLiteralType
+    | TSMethodSignature
+    | TSModuleDeclaration
+    | TSNonNullExpression
+    | TSPropertySignature
+    | TSSatisfiesExpression
+    | TSTypeAssertion
+    | TaggedTemplateExpression
+    | TemplateLiteral
+    | ThrowStatement
+    | TupleExpression
+    | TypeCastExpression
+    | UnaryExpression
+    | UpdateExpression
+    | VariableDeclarator
+    | WhileStatement
+    | WithStatement
+    | YieldExpression;
+  StringLiteralTypeAnnotation:
+    | ArrayTypeAnnotation
+    | DeclareExportDeclaration
+    | DeclareOpaqueType
+    | DeclareTypeAlias
+    | DeclaredPredicate
+    | FunctionTypeAnnotation
+    | FunctionTypeParam
+    | IndexedAccessType
+    | IntersectionTypeAnnotation
+    | NullableTypeAnnotation
+    | ObjectTypeCallProperty
+    | ObjectTypeIndexer
+    | ObjectTypeInternalSlot
+    | ObjectTypeProperty
+    | ObjectTypeSpreadProperty
+    | OpaqueType
+    | OptionalIndexedAccessType
+    | TupleTypeAnnotation
+    | TypeAlias
+    | TypeAnnotation
+    | TypeParameter
+    | TypeParameterInstantiation
+    | TypeofTypeAnnotation
+    | UnionTypeAnnotation;
+  StringTypeAnnotation:
+    | ArrayTypeAnnotation
+    | DeclareExportDeclaration
+    | DeclareOpaqueType
+    | DeclareTypeAlias
+    | DeclaredPredicate
+    | FunctionTypeAnnotation
+    | FunctionTypeParam
+    | IndexedAccessType
+    | IntersectionTypeAnnotation
+    | NullableTypeAnnotation
+    | ObjectTypeCallProperty
+    | ObjectTypeIndexer
+    | ObjectTypeInternalSlot
+    | ObjectTypeProperty
+    | ObjectTypeSpreadProperty
+    | OpaqueType
+    | OptionalIndexedAccessType
+    | TupleTypeAnnotation
+    | TypeAlias
+    | TypeAnnotation
+    | TypeParameter
+    | TypeParameterInstantiation
+    | TypeofTypeAnnotation
+    | UnionTypeAnnotation;
+  Super:
+    | ArrayExpression
+    | ArrowFunctionExpression
+    | AssignmentExpression
+    | AssignmentPattern
+    | AwaitExpression
+    | BinaryExpression
+    | BindExpression
+    | CallExpression
+    | ClassAccessorProperty
+    | ClassDeclaration
+    | ClassExpression
+    | ClassMethod
+    | ClassPrivateProperty
+    | ClassProperty
+    | ConditionalExpression
+    | Decorator
+    | DoWhileStatement
+    | ExportDefaultDeclaration
+    | ExpressionStatement
+    | ForInStatement
+    | ForOfStatement
+    | ForStatement
+    | IfStatement
+    | JSXExpressionContainer
+    | JSXSpreadAttribute
+    | JSXSpreadChild
+    | LogicalExpression
+    | MemberExpression
+    | NewExpression
+    | ObjectMethod
+    | ObjectProperty
+    | OptionalCallExpression
+    | OptionalMemberExpression
+    | ParenthesizedExpression
+    | PipelineBareFunction
+    | PipelineTopicExpression
+    | ReturnStatement
+    | SequenceExpression
+    | SpreadElement
+    | SwitchCase
+    | SwitchStatement
+    | TSAsExpression
+    | TSDeclareMethod
+    | TSEnumDeclaration
+    | TSEnumMember
+    | TSExportAssignment
+    | TSInstantiationExpression
+    | TSMethodSignature
+    | TSNonNullExpression
+    | TSPropertySignature
+    | TSSatisfiesExpression
+    | TSTypeAssertion
+    | TaggedTemplateExpression
+    | TemplateLiteral
+    | ThrowStatement
+    | TupleExpression
+    | TypeCastExpression
+    | UnaryExpression
+    | UpdateExpression
+    | VariableDeclarator
+    | WhileStatement
+    | WithStatement
+    | YieldExpression;
+  SwitchCase: SwitchStatement;
+  SwitchStatement:
+    | BlockStatement
+    | DoWhileStatement
+    | ForInStatement
+    | ForOfStatement
+    | ForStatement
+    | IfStatement
+    | LabeledStatement
+    | Program
+    | StaticBlock
+    | SwitchCase
+    | TSModuleBlock
+    | WhileStatement
+    | WithStatement;
+  SymbolTypeAnnotation:
+    | ArrayTypeAnnotation
+    | DeclareExportDeclaration
+    | DeclareOpaqueType
+    | DeclareTypeAlias
+    | DeclaredPredicate
+    | FunctionTypeAnnotation
+    | FunctionTypeParam
+    | IndexedAccessType
+    | IntersectionTypeAnnotation
+    | NullableTypeAnnotation
+    | ObjectTypeCallProperty
+    | ObjectTypeIndexer
+    | ObjectTypeInternalSlot
+    | ObjectTypeProperty
+    | ObjectTypeSpreadProperty
+    | OpaqueType
+    | OptionalIndexedAccessType
+    | TupleTypeAnnotation
+    | TypeAlias
+    | TypeAnnotation
+    | TypeParameter
+    | TypeParameterInstantiation
+    | TypeofTypeAnnotation
+    | UnionTypeAnnotation;
+  TSAnyKeyword:
+    | TSArrayType
+    | TSAsExpression
+    | TSConditionalType
+    | TSIndexedAccessType
+    | TSIntersectionType
+    | TSMappedType
+    | TSNamedTupleMember
+    | TSOptionalType
+    | TSParenthesizedType
+    | TSRestType
+    | TSSatisfiesExpression
+    | TSTupleType
+    | TSTypeAliasDeclaration
+    | TSTypeAnnotation
+    | TSTypeAssertion
+    | TSTypeOperator
+    | TSTypeParameter
+    | TSTypeParameterInstantiation
+    | TSUnionType
+    | TemplateLiteral;
+  TSArrayType:
+    | TSArrayType
+    | TSAsExpression
+    | TSConditionalType
+    | TSIndexedAccessType
+    | TSIntersectionType
+    | TSMappedType
+    | TSNamedTupleMember
+    | TSOptionalType
+    | TSParenthesizedType
+    | TSRestType
+    | TSSatisfiesExpression
+    | TSTupleType
+    | TSTypeAliasDeclaration
+    | TSTypeAnnotation
+    | TSTypeAssertion
+    | TSTypeOperator
+    | TSTypeParameter
+    | TSTypeParameterInstantiation
+    | TSUnionType
+    | TemplateLiteral;
+  TSAsExpression:
+    | ArrayExpression
+    | ArrayPattern
+    | ArrowFunctionExpression
+    | AssignmentExpression
+    | AssignmentPattern
+    | AwaitExpression
+    | BinaryExpression
+    | BindExpression
+    | CallExpression
+    | ClassAccessorProperty
+    | ClassDeclaration
+    | ClassExpression
+    | ClassMethod
+    | ClassPrivateProperty
+    | ClassProperty
+    | ConditionalExpression
+    | Decorator
+    | DoWhileStatement
+    | ExportDefaultDeclaration
+    | ExpressionStatement
+    | ForInStatement
+    | ForOfStatement
+    | ForStatement
+    | IfStatement
+    | JSXExpressionContainer
+    | JSXSpreadAttribute
+    | JSXSpreadChild
+    | LogicalExpression
+    | MemberExpression
+    | NewExpression
+    | ObjectMethod
+    | ObjectProperty
+    | OptionalCallExpression
+    | OptionalMemberExpression
+    | ParenthesizedExpression
+    | PipelineBareFunction
+    | PipelineTopicExpression
+    | RestElement
+    | ReturnStatement
+    | SequenceExpression
+    | SpreadElement
+    | SwitchCase
+    | SwitchStatement
+    | TSAsExpression
+    | TSDeclareMethod
+    | TSEnumDeclaration
+    | TSEnumMember
+    | TSExportAssignment
+    | TSInstantiationExpression
+    | TSMethodSignature
+    | TSNonNullExpression
+    | TSPropertySignature
+    | TSSatisfiesExpression
+    | TSTypeAssertion
+    | TaggedTemplateExpression
+    | TemplateLiteral
+    | ThrowStatement
+    | TupleExpression
+    | TypeCastExpression
+    | UnaryExpression
+    | UpdateExpression
+    | VariableDeclarator
+    | WhileStatement
+    | WithStatement
+    | YieldExpression;
+  TSBigIntKeyword:
+    | TSArrayType
+    | TSAsExpression
+    | TSConditionalType
+    | TSIndexedAccessType
+    | TSIntersectionType
+    | TSMappedType
+    | TSNamedTupleMember
+    | TSOptionalType
+    | TSParenthesizedType
+    | TSRestType
+    | TSSatisfiesExpression
+    | TSTupleType
+    | TSTypeAliasDeclaration
+    | TSTypeAnnotation
+    | TSTypeAssertion
+    | TSTypeOperator
+    | TSTypeParameter
+    | TSTypeParameterInstantiation
+    | TSUnionType
+    | TemplateLiteral;
+  TSBooleanKeyword:
+    | TSArrayType
+    | TSAsExpression
+    | TSConditionalType
+    | TSIndexedAccessType
+    | TSIntersectionType
+    | TSMappedType
+    | TSNamedTupleMember
+    | TSOptionalType
+    | TSParenthesizedType
+    | TSRestType
+    | TSSatisfiesExpression
+    | TSTupleType
+    | TSTypeAliasDeclaration
+    | TSTypeAnnotation
+    | TSTypeAssertion
+    | TSTypeOperator
+    | TSTypeParameter
+    | TSTypeParameterInstantiation
+    | TSUnionType
+    | TemplateLiteral;
+  TSCallSignatureDeclaration: TSInterfaceBody | TSTypeLiteral;
+  TSConditionalType:
+    | TSArrayType
+    | TSAsExpression
+    | TSConditionalType
+    | TSIndexedAccessType
+    | TSIntersectionType
+    | TSMappedType
+    | TSNamedTupleMember
+    | TSOptionalType
+    | TSParenthesizedType
+    | TSRestType
+    | TSSatisfiesExpression
+    | TSTupleType
+    | TSTypeAliasDeclaration
+    | TSTypeAnnotation
+    | TSTypeAssertion
+    | TSTypeOperator
+    | TSTypeParameter
+    | TSTypeParameterInstantiation
+    | TSUnionType
+    | TemplateLiteral;
+  TSConstructSignatureDeclaration: TSInterfaceBody | TSTypeLiteral;
+  TSConstructorType:
+    | TSArrayType
+    | TSAsExpression
+    | TSConditionalType
+    | TSIndexedAccessType
+    | TSIntersectionType
+    | TSMappedType
+    | TSNamedTupleMember
+    | TSOptionalType
+    | TSParenthesizedType
+    | TSRestType
+    | TSSatisfiesExpression
+    | TSTupleType
+    | TSTypeAliasDeclaration
+    | TSTypeAnnotation
+    | TSTypeAssertion
+    | TSTypeOperator
+    | TSTypeParameter
+    | TSTypeParameterInstantiation
+    | TSUnionType
+    | TemplateLiteral;
+  TSDeclareFunction:
+    | BlockStatement
+    | DoWhileStatement
+    | ExportDefaultDeclaration
+    | ExportNamedDeclaration
+    | ForInStatement
+    | ForOfStatement
+    | ForStatement
+    | IfStatement
+    | LabeledStatement
+    | Program
+    | StaticBlock
+    | SwitchCase
+    | TSModuleBlock
+    | WhileStatement
+    | WithStatement;
+  TSDeclareMethod: ClassBody;
+  TSEnumDeclaration:
+    | BlockStatement
+    | DoWhileStatement
+    | ExportNamedDeclaration
+    | ForInStatement
+    | ForOfStatement
+    | ForStatement
+    | IfStatement
+    | LabeledStatement
+    | Program
+    | StaticBlock
+    | SwitchCase
+    | TSModuleBlock
+    | WhileStatement
+    | WithStatement;
+  TSEnumMember: TSEnumDeclaration;
+  TSExportAssignment:
+    | BlockStatement
+    | DoWhileStatement
+    | ForInStatement
+    | ForOfStatement
+    | ForStatement
+    | IfStatement
+    | LabeledStatement
+    | Program
+    | StaticBlock
+    | SwitchCase
+    | TSModuleBlock
+    | WhileStatement
+    | WithStatement;
+  TSExpressionWithTypeArguments:
+    | ClassDeclaration
+    | ClassExpression
+    | TSArrayType
+    | TSAsExpression
+    | TSConditionalType
+    | TSIndexedAccessType
+    | TSInterfaceDeclaration
+    | TSIntersectionType
+    | TSMappedType
+    | TSNamedTupleMember
+    | TSOptionalType
+    | TSParenthesizedType
+    | TSRestType
+    | TSSatisfiesExpression
+    | TSTupleType
+    | TSTypeAliasDeclaration
+    | TSTypeAnnotation
+    | TSTypeAssertion
+    | TSTypeOperator
+    | TSTypeParameter
+    | TSTypeParameterInstantiation
+    | TSUnionType
+    | TemplateLiteral;
+  TSExternalModuleReference: TSImportEqualsDeclaration;
+  TSFunctionType:
+    | TSArrayType
+    | TSAsExpression
+    | TSConditionalType
+    | TSIndexedAccessType
+    | TSIntersectionType
+    | TSMappedType
+    | TSNamedTupleMember
+    | TSOptionalType
+    | TSParenthesizedType
+    | TSRestType
+    | TSSatisfiesExpression
+    | TSTupleType
+    | TSTypeAliasDeclaration
+    | TSTypeAnnotation
+    | TSTypeAssertion
+    | TSTypeOperator
+    | TSTypeParameter
+    | TSTypeParameterInstantiation
+    | TSUnionType
+    | TemplateLiteral;
+  TSImportEqualsDeclaration:
+    | BlockStatement
+    | DoWhileStatement
+    | ForInStatement
+    | ForOfStatement
+    | ForStatement
+    | IfStatement
+    | LabeledStatement
+    | Program
+    | StaticBlock
+    | SwitchCase
+    | TSModuleBlock
+    | WhileStatement
+    | WithStatement;
+  TSImportType:
+    | TSArrayType
+    | TSAsExpression
+    | TSConditionalType
+    | TSIndexedAccessType
+    | TSIntersectionType
+    | TSMappedType
+    | TSNamedTupleMember
+    | TSOptionalType
+    | TSParenthesizedType
+    | TSRestType
+    | TSSatisfiesExpression
+    | TSTupleType
+    | TSTypeAliasDeclaration
+    | TSTypeAnnotation
+    | TSTypeAssertion
+    | TSTypeOperator
+    | TSTypeParameter
+    | TSTypeParameterInstantiation
+    | TSTypeQuery
+    | TSUnionType
+    | TemplateLiteral;
+  TSIndexSignature: ClassBody | TSInterfaceBody | TSTypeLiteral;
+  TSIndexedAccessType:
+    | TSArrayType
+    | TSAsExpression
+    | TSConditionalType
+    | TSIndexedAccessType
+    | TSIntersectionType
+    | TSMappedType
+    | TSNamedTupleMember
+    | TSOptionalType
+    | TSParenthesizedType
+    | TSRestType
+    | TSSatisfiesExpression
+    | TSTupleType
+    | TSTypeAliasDeclaration
+    | TSTypeAnnotation
+    | TSTypeAssertion
+    | TSTypeOperator
+    | TSTypeParameter
+    | TSTypeParameterInstantiation
+    | TSUnionType
+    | TemplateLiteral;
+  TSInferType:
+    | TSArrayType
+    | TSAsExpression
+    | TSConditionalType
+    | TSIndexedAccessType
+    | TSIntersectionType
+    | TSMappedType
+    | TSNamedTupleMember
+    | TSOptionalType
+    | TSParenthesizedType
+    | TSRestType
+    | TSSatisfiesExpression
+    | TSTupleType
+    | TSTypeAliasDeclaration
+    | TSTypeAnnotation
+    | TSTypeAssertion
+    | TSTypeOperator
+    | TSTypeParameter
+    | TSTypeParameterInstantiation
+    | TSUnionType
+    | TemplateLiteral;
+  TSInstantiationExpression:
+    | ArrayExpression
+    | ArrowFunctionExpression
+    | AssignmentExpression
+    | AssignmentPattern
+    | AwaitExpression
+    | BinaryExpression
+    | BindExpression
+    | CallExpression
+    | ClassAccessorProperty
+    | ClassDeclaration
+    | ClassExpression
+    | ClassMethod
+    | ClassPrivateProperty
+    | ClassProperty
+    | ConditionalExpression
+    | Decorator
+    | DoWhileStatement
+    | ExportDefaultDeclaration
+    | ExpressionStatement
+    | ForInStatement
+    | ForOfStatement
+    | ForStatement
+    | IfStatement
+    | JSXExpressionContainer
+    | JSXSpreadAttribute
+    | JSXSpreadChild
+    | LogicalExpression
+    | MemberExpression
+    | NewExpression
+    | ObjectMethod
+    | ObjectProperty
+    | OptionalCallExpression
+    | OptionalMemberExpression
+    | ParenthesizedExpression
+    | PipelineBareFunction
+    | PipelineTopicExpression
+    | ReturnStatement
+    | SequenceExpression
+    | SpreadElement
+    | SwitchCase
+    | SwitchStatement
+    | TSAsExpression
+    | TSDeclareMethod
+    | TSEnumDeclaration
+    | TSEnumMember
+    | TSExportAssignment
+    | TSInstantiationExpression
+    | TSMethodSignature
+    | TSNonNullExpression
+    | TSPropertySignature
+    | TSSatisfiesExpression
+    | TSTypeAssertion
+    | TaggedTemplateExpression
+    | TemplateLiteral
+    | ThrowStatement
+    | TupleExpression
+    | TypeCastExpression
+    | UnaryExpression
+    | UpdateExpression
+    | VariableDeclarator
+    | WhileStatement
+    | WithStatement
+    | YieldExpression;
+  TSInterfaceBody: TSInterfaceDeclaration;
+  TSInterfaceDeclaration:
+    | BlockStatement
+    | DoWhileStatement
+    | ExportNamedDeclaration
+    | ForInStatement
+    | ForOfStatement
+    | ForStatement
+    | IfStatement
+    | LabeledStatement
+    | Program
+    | StaticBlock
+    | SwitchCase
+    | TSModuleBlock
+    | WhileStatement
+    | WithStatement;
+  TSIntersectionType:
+    | TSArrayType
+    | TSAsExpression
+    | TSConditionalType
+    | TSIndexedAccessType
+    | TSIntersectionType
+    | TSMappedType
+    | TSNamedTupleMember
+    | TSOptionalType
+    | TSParenthesizedType
+    | TSRestType
+    | TSSatisfiesExpression
+    | TSTupleType
+    | TSTypeAliasDeclaration
+    | TSTypeAnnotation
+    | TSTypeAssertion
+    | TSTypeOperator
+    | TSTypeParameter
+    | TSTypeParameterInstantiation
+    | TSUnionType
+    | TemplateLiteral;
+  TSIntrinsicKeyword:
+    | TSArrayType
+    | TSAsExpression
+    | TSConditionalType
+    | TSIndexedAccessType
+    | TSIntersectionType
+    | TSMappedType
+    | TSNamedTupleMember
+    | TSOptionalType
+    | TSParenthesizedType
+    | TSRestType
+    | TSSatisfiesExpression
+    | TSTupleType
+    | TSTypeAliasDeclaration
+    | TSTypeAnnotation
+    | TSTypeAssertion
+    | TSTypeOperator
+    | TSTypeParameter
+    | TSTypeParameterInstantiation
+    | TSUnionType
+    | TemplateLiteral;
+  TSLiteralType:
+    | TSArrayType
+    | TSAsExpression
+    | TSConditionalType
+    | TSIndexedAccessType
+    | TSIntersectionType
+    | TSMappedType
+    | TSNamedTupleMember
+    | TSOptionalType
+    | TSParenthesizedType
+    | TSRestType
+    | TSSatisfiesExpression
+    | TSTupleType
+    | TSTypeAliasDeclaration
+    | TSTypeAnnotation
+    | TSTypeAssertion
+    | TSTypeOperator
+    | TSTypeParameter
+    | TSTypeParameterInstantiation
+    | TSUnionType
+    | TemplateLiteral;
+  TSMappedType:
+    | TSArrayType
+    | TSAsExpression
+    | TSConditionalType
+    | TSIndexedAccessType
+    | TSIntersectionType
+    | TSMappedType
+    | TSNamedTupleMember
+    | TSOptionalType
+    | TSParenthesizedType
+    | TSRestType
+    | TSSatisfiesExpression
+    | TSTupleType
+    | TSTypeAliasDeclaration
+    | TSTypeAnnotation
+    | TSTypeAssertion
+    | TSTypeOperator
+    | TSTypeParameter
+    | TSTypeParameterInstantiation
+    | TSUnionType
+    | TemplateLiteral;
+  TSMethodSignature: TSInterfaceBody | TSTypeLiteral;
+  TSModuleBlock: TSModuleDeclaration;
+  TSModuleDeclaration:
+    | BlockStatement
+    | DoWhileStatement
+    | ExportNamedDeclaration
+    | ForInStatement
+    | ForOfStatement
+    | ForStatement
+    | IfStatement
+    | LabeledStatement
+    | Program
+    | StaticBlock
+    | SwitchCase
+    | TSModuleBlock
+    | TSModuleDeclaration
+    | WhileStatement
+    | WithStatement;
+  TSNamedTupleMember: TSTupleType;
+  TSNamespaceExportDeclaration:
+    | BlockStatement
+    | DoWhileStatement
+    | ForInStatement
+    | ForOfStatement
+    | ForStatement
+    | IfStatement
+    | LabeledStatement
+    | Program
+    | StaticBlock
+    | SwitchCase
+    | TSModuleBlock
+    | WhileStatement
+    | WithStatement;
+  TSNeverKeyword:
+    | TSArrayType
+    | TSAsExpression
+    | TSConditionalType
+    | TSIndexedAccessType
+    | TSIntersectionType
+    | TSMappedType
+    | TSNamedTupleMember
+    | TSOptionalType
+    | TSParenthesizedType
+    | TSRestType
+    | TSSatisfiesExpression
+    | TSTupleType
+    | TSTypeAliasDeclaration
+    | TSTypeAnnotation
+    | TSTypeAssertion
+    | TSTypeOperator
+    | TSTypeParameter
+    | TSTypeParameterInstantiation
+    | TSUnionType
+    | TemplateLiteral;
+  TSNonNullExpression:
+    | ArrayExpression
+    | ArrayPattern
+    | ArrowFunctionExpression
+    | AssignmentExpression
+    | AssignmentPattern
+    | AwaitExpression
+    | BinaryExpression
+    | BindExpression
+    | CallExpression
+    | ClassAccessorProperty
+    | ClassDeclaration
+    | ClassExpression
+    | ClassMethod
+    | ClassPrivateProperty
+    | ClassProperty
+    | ConditionalExpression
+    | Decorator
+    | DoWhileStatement
+    | ExportDefaultDeclaration
+    | ExpressionStatement
+    | ForInStatement
+    | ForOfStatement
+    | ForStatement
+    | IfStatement
+    | JSXExpressionContainer
+    | JSXSpreadAttribute
+    | JSXSpreadChild
+    | LogicalExpression
+    | MemberExpression
+    | NewExpression
+    | ObjectMethod
+    | ObjectProperty
+    | OptionalCallExpression
+    | OptionalMemberExpression
+    | ParenthesizedExpression
+    | PipelineBareFunction
+    | PipelineTopicExpression
+    | RestElement
+    | ReturnStatement
+    | SequenceExpression
+    | SpreadElement
+    | SwitchCase
+    | SwitchStatement
+    | TSAsExpression
+    | TSDeclareMethod
+    | TSEnumDeclaration
+    | TSEnumMember
+    | TSExportAssignment
+    | TSInstantiationExpression
+    | TSMethodSignature
+    | TSNonNullExpression
+    | TSPropertySignature
+    | TSSatisfiesExpression
+    | TSTypeAssertion
+    | TaggedTemplateExpression
+    | TemplateLiteral
+    | ThrowStatement
+    | TupleExpression
+    | TypeCastExpression
+    | UnaryExpression
+    | UpdateExpression
+    | VariableDeclarator
+    | WhileStatement
+    | WithStatement
+    | YieldExpression;
+  TSNullKeyword:
+    | TSArrayType
+    | TSAsExpression
+    | TSConditionalType
+    | TSIndexedAccessType
+    | TSIntersectionType
+    | TSMappedType
+    | TSNamedTupleMember
+    | TSOptionalType
+    | TSParenthesizedType
+    | TSRestType
+    | TSSatisfiesExpression
+    | TSTupleType
+    | TSTypeAliasDeclaration
+    | TSTypeAnnotation
+    | TSTypeAssertion
+    | TSTypeOperator
+    | TSTypeParameter
+    | TSTypeParameterInstantiation
+    | TSUnionType
+    | TemplateLiteral;
+  TSNumberKeyword:
+    | TSArrayType
+    | TSAsExpression
+    | TSConditionalType
+    | TSIndexedAccessType
+    | TSIntersectionType
+    | TSMappedType
+    | TSNamedTupleMember
+    | TSOptionalType
+    | TSParenthesizedType
+    | TSRestType
+    | TSSatisfiesExpression
+    | TSTupleType
+    | TSTypeAliasDeclaration
+    | TSTypeAnnotation
+    | TSTypeAssertion
+    | TSTypeOperator
+    | TSTypeParameter
+    | TSTypeParameterInstantiation
+    | TSUnionType
+    | TemplateLiteral;
+  TSObjectKeyword:
+    | TSArrayType
+    | TSAsExpression
+    | TSConditionalType
+    | TSIndexedAccessType
+    | TSIntersectionType
+    | TSMappedType
+    | TSNamedTupleMember
+    | TSOptionalType
+    | TSParenthesizedType
+    | TSRestType
+    | TSSatisfiesExpression
+    | TSTupleType
+    | TSTypeAliasDeclaration
+    | TSTypeAnnotation
+    | TSTypeAssertion
+    | TSTypeOperator
+    | TSTypeParameter
+    | TSTypeParameterInstantiation
+    | TSUnionType
+    | TemplateLiteral;
+  TSOptionalType:
+    | TSArrayType
+    | TSAsExpression
+    | TSConditionalType
+    | TSIndexedAccessType
+    | TSIntersectionType
+    | TSMappedType
+    | TSNamedTupleMember
+    | TSOptionalType
+    | TSParenthesizedType
+    | TSRestType
+    | TSSatisfiesExpression
+    | TSTupleType
+    | TSTypeAliasDeclaration
+    | TSTypeAnnotation
+    | TSTypeAssertion
+    | TSTypeOperator
+    | TSTypeParameter
+    | TSTypeParameterInstantiation
+    | TSUnionType
+    | TemplateLiteral;
+  TSParameterProperty:
+    | ArrayPattern
+    | AssignmentExpression
+    | ClassMethod
+    | ClassPrivateMethod
+    | ForInStatement
+    | ForOfStatement
+    | RestElement
+    | TSDeclareMethod
+    | VariableDeclarator;
+  TSParenthesizedType:
+    | TSArrayType
+    | TSAsExpression
+    | TSConditionalType
+    | TSIndexedAccessType
+    | TSIntersectionType
+    | TSMappedType
+    | TSNamedTupleMember
+    | TSOptionalType
+    | TSParenthesizedType
+    | TSRestType
+    | TSSatisfiesExpression
+    | TSTupleType
+    | TSTypeAliasDeclaration
+    | TSTypeAnnotation
+    | TSTypeAssertion
+    | TSTypeOperator
+    | TSTypeParameter
+    | TSTypeParameterInstantiation
+    | TSUnionType
+    | TemplateLiteral;
+  TSPropertySignature: TSInterfaceBody | TSTypeLiteral;
+  TSQualifiedName:
+    | TSExpressionWithTypeArguments
+    | TSImportEqualsDeclaration
+    | TSImportType
+    | TSQualifiedName
+    | TSTypeQuery
+    | TSTypeReference;
+  TSRestType:
+    | TSArrayType
+    | TSAsExpression
+    | TSConditionalType
+    | TSIndexedAccessType
+    | TSIntersectionType
+    | TSMappedType
+    | TSNamedTupleMember
+    | TSOptionalType
+    | TSParenthesizedType
+    | TSRestType
+    | TSSatisfiesExpression
+    | TSTupleType
+    | TSTypeAliasDeclaration
+    | TSTypeAnnotation
+    | TSTypeAssertion
+    | TSTypeOperator
+    | TSTypeParameter
+    | TSTypeParameterInstantiation
+    | TSUnionType
+    | TemplateLiteral;
+  TSSatisfiesExpression:
+    | ArrayExpression
+    | ArrayPattern
+    | ArrowFunctionExpression
+    | AssignmentExpression
+    | AssignmentPattern
+    | AwaitExpression
+    | BinaryExpression
+    | BindExpression
+    | CallExpression
+    | ClassAccessorProperty
+    | ClassDeclaration
+    | ClassExpression
+    | ClassMethod
+    | ClassPrivateProperty
+    | ClassProperty
+    | ConditionalExpression
+    | Decorator
+    | DoWhileStatement
+    | ExportDefaultDeclaration
+    | ExpressionStatement
+    | ForInStatement
+    | ForOfStatement
+    | ForStatement
+    | IfStatement
+    | JSXExpressionContainer
+    | JSXSpreadAttribute
+    | JSXSpreadChild
+    | LogicalExpression
+    | MemberExpression
+    | NewExpression
+    | ObjectMethod
+    | ObjectProperty
+    | OptionalCallExpression
+    | OptionalMemberExpression
+    | ParenthesizedExpression
+    | PipelineBareFunction
+    | PipelineTopicExpression
+    | RestElement
+    | ReturnStatement
+    | SequenceExpression
+    | SpreadElement
+    | SwitchCase
+    | SwitchStatement
+    | TSAsExpression
+    | TSDeclareMethod
+    | TSEnumDeclaration
+    | TSEnumMember
+    | TSExportAssignment
+    | TSInstantiationExpression
+    | TSMethodSignature
+    | TSNonNullExpression
+    | TSPropertySignature
+    | TSSatisfiesExpression
+    | TSTypeAssertion
+    | TaggedTemplateExpression
+    | TemplateLiteral
+    | ThrowStatement
+    | TupleExpression
+    | TypeCastExpression
+    | UnaryExpression
+    | UpdateExpression
+    | VariableDeclarator
+    | WhileStatement
+    | WithStatement
+    | YieldExpression;
+  TSStringKeyword:
+    | TSArrayType
+    | TSAsExpression
+    | TSConditionalType
+    | TSIndexedAccessType
+    | TSIntersectionType
+    | TSMappedType
+    | TSNamedTupleMember
+    | TSOptionalType
+    | TSParenthesizedType
+    | TSRestType
+    | TSSatisfiesExpression
+    | TSTupleType
+    | TSTypeAliasDeclaration
+    | TSTypeAnnotation
+    | TSTypeAssertion
+    | TSTypeOperator
+    | TSTypeParameter
+    | TSTypeParameterInstantiation
+    | TSUnionType
+    | TemplateLiteral;
+  TSSymbolKeyword:
+    | TSArrayType
+    | TSAsExpression
+    | TSConditionalType
+    | TSIndexedAccessType
+    | TSIntersectionType
+    | TSMappedType
+    | TSNamedTupleMember
+    | TSOptionalType
+    | TSParenthesizedType
+    | TSRestType
+    | TSSatisfiesExpression
+    | TSTupleType
+    | TSTypeAliasDeclaration
+    | TSTypeAnnotation
+    | TSTypeAssertion
+    | TSTypeOperator
+    | TSTypeParameter
+    | TSTypeParameterInstantiation
+    | TSUnionType
+    | TemplateLiteral;
+  TSThisType:
+    | TSArrayType
+    | TSAsExpression
+    | TSConditionalType
+    | TSIndexedAccessType
+    | TSIntersectionType
+    | TSMappedType
+    | TSNamedTupleMember
+    | TSOptionalType
+    | TSParenthesizedType
+    | TSRestType
+    | TSSatisfiesExpression
+    | TSTupleType
+    | TSTypeAliasDeclaration
+    | TSTypeAnnotation
+    | TSTypeAssertion
+    | TSTypeOperator
+    | TSTypeParameter
+    | TSTypeParameterInstantiation
+    | TSTypePredicate
+    | TSUnionType
+    | TemplateLiteral;
+  TSTupleType:
+    | TSArrayType
+    | TSAsExpression
+    | TSConditionalType
+    | TSIndexedAccessType
+    | TSIntersectionType
+    | TSMappedType
+    | TSNamedTupleMember
+    | TSOptionalType
+    | TSParenthesizedType
+    | TSRestType
+    | TSSatisfiesExpression
+    | TSTupleType
+    | TSTypeAliasDeclaration
+    | TSTypeAnnotation
+    | TSTypeAssertion
+    | TSTypeOperator
+    | TSTypeParameter
+    | TSTypeParameterInstantiation
+    | TSUnionType
+    | TemplateLiteral;
+  TSTypeAliasDeclaration:
+    | BlockStatement
+    | DoWhileStatement
+    | ExportNamedDeclaration
+    | ForInStatement
+    | ForOfStatement
+    | ForStatement
+    | IfStatement
+    | LabeledStatement
+    | Program
+    | StaticBlock
+    | SwitchCase
+    | TSModuleBlock
+    | WhileStatement
+    | WithStatement;
+  TSTypeAnnotation:
+    | ArrayPattern
+    | ArrowFunctionExpression
+    | AssignmentPattern
+    | ClassAccessorProperty
+    | ClassMethod
+    | ClassPrivateMethod
+    | ClassPrivateProperty
+    | ClassProperty
+    | FunctionDeclaration
+    | FunctionExpression
+    | Identifier
+    | ObjectMethod
+    | ObjectPattern
+    | RestElement
+    | TSCallSignatureDeclaration
+    | TSConstructSignatureDeclaration
+    | TSConstructorType
+    | TSDeclareFunction
+    | TSDeclareMethod
+    | TSFunctionType
+    | TSIndexSignature
+    | TSMethodSignature
+    | TSPropertySignature
+    | TSTypePredicate;
+  TSTypeAssertion:
+    | ArrayExpression
+    | ArrayPattern
+    | ArrowFunctionExpression
+    | AssignmentExpression
+    | AssignmentPattern
+    | AwaitExpression
+    | BinaryExpression
+    | BindExpression
+    | CallExpression
+    | ClassAccessorProperty
+    | ClassDeclaration
+    | ClassExpression
+    | ClassMethod
+    | ClassPrivateProperty
+    | ClassProperty
+    | ConditionalExpression
+    | Decorator
+    | DoWhileStatement
+    | ExportDefaultDeclaration
+    | ExpressionStatement
+    | ForInStatement
+    | ForOfStatement
+    | ForStatement
+    | IfStatement
+    | JSXExpressionContainer
+    | JSXSpreadAttribute
+    | JSXSpreadChild
+    | LogicalExpression
+    | MemberExpression
+    | NewExpression
+    | ObjectMethod
+    | ObjectProperty
+    | OptionalCallExpression
+    | OptionalMemberExpression
+    | ParenthesizedExpression
+    | PipelineBareFunction
+    | PipelineTopicExpression
+    | RestElement
+    | ReturnStatement
+    | SequenceExpression
+    | SpreadElement
+    | SwitchCase
+    | SwitchStatement
+    | TSAsExpression
+    | TSDeclareMethod
+    | TSEnumDeclaration
+    | TSEnumMember
+    | TSExportAssignment
+    | TSInstantiationExpression
+    | TSMethodSignature
+    | TSNonNullExpression
+    | TSPropertySignature
+    | TSSatisfiesExpression
+    | TSTypeAssertion
+    | TaggedTemplateExpression
+    | TemplateLiteral
+    | ThrowStatement
+    | TupleExpression
+    | TypeCastExpression
+    | UnaryExpression
+    | UpdateExpression
+    | VariableDeclarator
+    | WhileStatement
+    | WithStatement
+    | YieldExpression;
+  TSTypeLiteral:
+    | TSArrayType
+    | TSAsExpression
+    | TSConditionalType
+    | TSIndexedAccessType
+    | TSIntersectionType
+    | TSMappedType
+    | TSNamedTupleMember
+    | TSOptionalType
+    | TSParenthesizedType
+    | TSRestType
+    | TSSatisfiesExpression
+    | TSTupleType
+    | TSTypeAliasDeclaration
+    | TSTypeAnnotation
+    | TSTypeAssertion
+    | TSTypeOperator
+    | TSTypeParameter
+    | TSTypeParameterInstantiation
+    | TSUnionType
+    | TemplateLiteral;
+  TSTypeOperator:
+    | TSArrayType
+    | TSAsExpression
+    | TSConditionalType
+    | TSIndexedAccessType
+    | TSIntersectionType
+    | TSMappedType
+    | TSNamedTupleMember
+    | TSOptionalType
+    | TSParenthesizedType
+    | TSRestType
+    | TSSatisfiesExpression
+    | TSTupleType
+    | TSTypeAliasDeclaration
+    | TSTypeAnnotation
+    | TSTypeAssertion
+    | TSTypeOperator
+    | TSTypeParameter
+    | TSTypeParameterInstantiation
+    | TSUnionType
+    | TemplateLiteral;
+  TSTypeParameter: TSInferType | TSMappedType | TSTypeParameterDeclaration;
+  TSTypeParameterDeclaration:
+    | ArrowFunctionExpression
+    | ClassDeclaration
+    | ClassExpression
+    | ClassMethod
+    | ClassPrivateMethod
+    | FunctionDeclaration
+    | FunctionExpression
+    | ObjectMethod
+    | TSCallSignatureDeclaration
+    | TSConstructSignatureDeclaration
+    | TSConstructorType
+    | TSDeclareFunction
+    | TSDeclareMethod
+    | TSFunctionType
+    | TSInterfaceDeclaration
+    | TSMethodSignature
+    | TSTypeAliasDeclaration;
+  TSTypeParameterInstantiation:
+    | CallExpression
+    | ClassDeclaration
+    | ClassExpression
+    | JSXOpeningElement
+    | NewExpression
+    | OptionalCallExpression
+    | TSExpressionWithTypeArguments
+    | TSImportType
+    | TSInstantiationExpression
+    | TSTypeQuery
+    | TSTypeReference
+    | TaggedTemplateExpression;
+  TSTypePredicate:
+    | TSArrayType
+    | TSAsExpression
+    | TSConditionalType
+    | TSIndexedAccessType
+    | TSIntersectionType
+    | TSMappedType
+    | TSNamedTupleMember
+    | TSOptionalType
+    | TSParenthesizedType
+    | TSRestType
+    | TSSatisfiesExpression
+    | TSTupleType
+    | TSTypeAliasDeclaration
+    | TSTypeAnnotation
+    | TSTypeAssertion
+    | TSTypeOperator
+    | TSTypeParameter
+    | TSTypeParameterInstantiation
+    | TSUnionType
+    | TemplateLiteral;
+  TSTypeQuery:
+    | TSArrayType
+    | TSAsExpression
+    | TSConditionalType
+    | TSIndexedAccessType
+    | TSIntersectionType
+    | TSMappedType
+    | TSNamedTupleMember
+    | TSOptionalType
+    | TSParenthesizedType
+    | TSRestType
+    | TSSatisfiesExpression
+    | TSTupleType
+    | TSTypeAliasDeclaration
+    | TSTypeAnnotation
+    | TSTypeAssertion
+    | TSTypeOperator
+    | TSTypeParameter
+    | TSTypeParameterInstantiation
+    | TSUnionType
+    | TemplateLiteral;
+  TSTypeReference:
+    | TSArrayType
+    | TSAsExpression
+    | TSConditionalType
+    | TSIndexedAccessType
+    | TSIntersectionType
+    | TSMappedType
+    | TSNamedTupleMember
+    | TSOptionalType
+    | TSParenthesizedType
+    | TSRestType
+    | TSSatisfiesExpression
+    | TSTupleType
+    | TSTypeAliasDeclaration
+    | TSTypeAnnotation
+    | TSTypeAssertion
+    | TSTypeOperator
+    | TSTypeParameter
+    | TSTypeParameterInstantiation
+    | TSUnionType
+    | TemplateLiteral;
+  TSUndefinedKeyword:
+    | TSArrayType
+    | TSAsExpression
+    | TSConditionalType
+    | TSIndexedAccessType
+    | TSIntersectionType
+    | TSMappedType
+    | TSNamedTupleMember
+    | TSOptionalType
+    | TSParenthesizedType
+    | TSRestType
+    | TSSatisfiesExpression
+    | TSTupleType
+    | TSTypeAliasDeclaration
+    | TSTypeAnnotation
+    | TSTypeAssertion
+    | TSTypeOperator
+    | TSTypeParameter
+    | TSTypeParameterInstantiation
+    | TSUnionType
+    | TemplateLiteral;
+  TSUnionType:
+    | TSArrayType
+    | TSAsExpression
+    | TSConditionalType
+    | TSIndexedAccessType
+    | TSIntersectionType
+    | TSMappedType
+    | TSNamedTupleMember
+    | TSOptionalType
+    | TSParenthesizedType
+    | TSRestType
+    | TSSatisfiesExpression
+    | TSTupleType
+    | TSTypeAliasDeclaration
+    | TSTypeAnnotation
+    | TSTypeAssertion
+    | TSTypeOperator
+    | TSTypeParameter
+    | TSTypeParameterInstantiation
+    | TSUnionType
+    | TemplateLiteral;
+  TSUnknownKeyword:
+    | TSArrayType
+    | TSAsExpression
+    | TSConditionalType
+    | TSIndexedAccessType
+    | TSIntersectionType
+    | TSMappedType
+    | TSNamedTupleMember
+    | TSOptionalType
+    | TSParenthesizedType
+    | TSRestType
+    | TSSatisfiesExpression
+    | TSTupleType
+    | TSTypeAliasDeclaration
+    | TSTypeAnnotation
+    | TSTypeAssertion
+    | TSTypeOperator
+    | TSTypeParameter
+    | TSTypeParameterInstantiation
+    | TSUnionType
+    | TemplateLiteral;
+  TSVoidKeyword:
+    | TSArrayType
+    | TSAsExpression
+    | TSConditionalType
+    | TSIndexedAccessType
+    | TSIntersectionType
+    | TSMappedType
+    | TSNamedTupleMember
+    | TSOptionalType
+    | TSParenthesizedType
+    | TSRestType
+    | TSSatisfiesExpression
+    | TSTupleType
+    | TSTypeAliasDeclaration
+    | TSTypeAnnotation
+    | TSTypeAssertion
+    | TSTypeOperator
+    | TSTypeParameter
+    | TSTypeParameterInstantiation
+    | TSUnionType
+    | TemplateLiteral;
+  TaggedTemplateExpression:
+    | ArrayExpression
+    | ArrowFunctionExpression
+    | AssignmentExpression
+    | AssignmentPattern
+    | AwaitExpression
+    | BinaryExpression
+    | BindExpression
+    | CallExpression
+    | ClassAccessorProperty
+    | ClassDeclaration
+    | ClassExpression
+    | ClassMethod
+    | ClassPrivateProperty
+    | ClassProperty
+    | ConditionalExpression
+    | Decorator
+    | DoWhileStatement
+    | ExportDefaultDeclaration
+    | ExpressionStatement
+    | ForInStatement
+    | ForOfStatement
+    | ForStatement
+    | IfStatement
+    | JSXExpressionContainer
+    | JSXSpreadAttribute
+    | JSXSpreadChild
+    | LogicalExpression
+    | MemberExpression
+    | NewExpression
+    | ObjectMethod
+    | ObjectProperty
+    | OptionalCallExpression
+    | OptionalMemberExpression
+    | ParenthesizedExpression
+    | PipelineBareFunction
+    | PipelineTopicExpression
+    | ReturnStatement
+    | SequenceExpression
+    | SpreadElement
+    | SwitchCase
+    | SwitchStatement
+    | TSAsExpression
+    | TSDeclareMethod
+    | TSEnumDeclaration
+    | TSEnumMember
+    | TSExportAssignment
+    | TSInstantiationExpression
+    | TSMethodSignature
+    | TSNonNullExpression
+    | TSPropertySignature
+    | TSSatisfiesExpression
+    | TSTypeAssertion
+    | TaggedTemplateExpression
+    | TemplateLiteral
+    | ThrowStatement
+    | TupleExpression
+    | TypeCastExpression
+    | UnaryExpression
+    | UpdateExpression
+    | VariableDeclarator
+    | WhileStatement
+    | WithStatement
+    | YieldExpression;
+  TemplateElement: TemplateLiteral;
+  TemplateLiteral:
+    | ArrayExpression
+    | ArrowFunctionExpression
+    | AssignmentExpression
+    | AssignmentPattern
+    | AwaitExpression
+    | BinaryExpression
+    | BindExpression
+    | CallExpression
+    | ClassAccessorProperty
+    | ClassDeclaration
+    | ClassExpression
+    | ClassMethod
+    | ClassPrivateProperty
+    | ClassProperty
+    | ConditionalExpression
+    | Decorator
+    | DoWhileStatement
+    | ExportDefaultDeclaration
+    | ExpressionStatement
+    | ForInStatement
+    | ForOfStatement
+    | ForStatement
+    | IfStatement
+    | JSXExpressionContainer
+    | JSXSpreadAttribute
+    | JSXSpreadChild
+    | LogicalExpression
+    | MemberExpression
+    | NewExpression
+    | ObjectMethod
+    | ObjectProperty
+    | OptionalCallExpression
+    | OptionalMemberExpression
+    | ParenthesizedExpression
+    | PipelineBareFunction
+    | PipelineTopicExpression
+    | ReturnStatement
+    | SequenceExpression
+    | SpreadElement
+    | SwitchCase
+    | SwitchStatement
+    | TSAsExpression
+    | TSDeclareMethod
+    | TSEnumDeclaration
+    | TSEnumMember
+    | TSExportAssignment
+    | TSInstantiationExpression
+    | TSLiteralType
+    | TSMethodSignature
+    | TSNonNullExpression
+    | TSPropertySignature
+    | TSSatisfiesExpression
+    | TSTypeAssertion
+    | TaggedTemplateExpression
+    | TemplateLiteral
+    | ThrowStatement
+    | TupleExpression
+    | TypeCastExpression
+    | UnaryExpression
+    | UpdateExpression
+    | VariableDeclarator
+    | WhileStatement
+    | WithStatement
+    | YieldExpression;
+  ThisExpression:
+    | ArrayExpression
+    | ArrowFunctionExpression
+    | AssignmentExpression
+    | AssignmentPattern
+    | AwaitExpression
+    | BinaryExpression
+    | BindExpression
+    | CallExpression
+    | ClassAccessorProperty
+    | ClassDeclaration
+    | ClassExpression
+    | ClassMethod
+    | ClassPrivateProperty
+    | ClassProperty
+    | ConditionalExpression
+    | Decorator
+    | DoWhileStatement
+    | ExportDefaultDeclaration
+    | ExpressionStatement
+    | ForInStatement
+    | ForOfStatement
+    | ForStatement
+    | IfStatement
+    | JSXExpressionContainer
+    | JSXSpreadAttribute
+    | JSXSpreadChild
+    | LogicalExpression
+    | MemberExpression
+    | NewExpression
+    | ObjectMethod
+    | ObjectProperty
+    | OptionalCallExpression
+    | OptionalMemberExpression
+    | ParenthesizedExpression
+    | PipelineBareFunction
+    | PipelineTopicExpression
+    | ReturnStatement
+    | SequenceExpression
+    | SpreadElement
+    | SwitchCase
+    | SwitchStatement
+    | TSAsExpression
+    | TSDeclareMethod
+    | TSEnumDeclaration
+    | TSEnumMember
+    | TSExportAssignment
+    | TSInstantiationExpression
+    | TSMethodSignature
+    | TSNonNullExpression
+    | TSPropertySignature
+    | TSSatisfiesExpression
+    | TSTypeAssertion
+    | TaggedTemplateExpression
+    | TemplateLiteral
+    | ThrowStatement
+    | TupleExpression
+    | TypeCastExpression
+    | UnaryExpression
+    | UpdateExpression
+    | VariableDeclarator
+    | WhileStatement
+    | WithStatement
+    | YieldExpression;
+  ThisTypeAnnotation:
+    | ArrayTypeAnnotation
+    | DeclareExportDeclaration
+    | DeclareOpaqueType
+    | DeclareTypeAlias
+    | DeclaredPredicate
+    | FunctionTypeAnnotation
+    | FunctionTypeParam
+    | IndexedAccessType
+    | IntersectionTypeAnnotation
+    | NullableTypeAnnotation
+    | ObjectTypeCallProperty
+    | ObjectTypeIndexer
+    | ObjectTypeInternalSlot
+    | ObjectTypeProperty
+    | ObjectTypeSpreadProperty
+    | OpaqueType
+    | OptionalIndexedAccessType
+    | TupleTypeAnnotation
+    | TypeAlias
+    | TypeAnnotation
+    | TypeParameter
+    | TypeParameterInstantiation
+    | TypeofTypeAnnotation
+    | UnionTypeAnnotation;
+  ThrowStatement:
+    | BlockStatement
+    | DoWhileStatement
+    | ForInStatement
+    | ForOfStatement
+    | ForStatement
+    | IfStatement
+    | LabeledStatement
+    | Program
+    | StaticBlock
+    | SwitchCase
+    | TSModuleBlock
+    | WhileStatement
+    | WithStatement;
+  TopicReference:
+    | ArrayExpression
+    | ArrowFunctionExpression
+    | AssignmentExpression
+    | AssignmentPattern
+    | AwaitExpression
+    | BinaryExpression
+    | BindExpression
+    | CallExpression
+    | ClassAccessorProperty
+    | ClassDeclaration
+    | ClassExpression
+    | ClassMethod
+    | ClassPrivateProperty
+    | ClassProperty
+    | ConditionalExpression
+    | Decorator
+    | DoWhileStatement
+    | ExportDefaultDeclaration
+    | ExpressionStatement
+    | ForInStatement
+    | ForOfStatement
+    | ForStatement
+    | IfStatement
+    | JSXExpressionContainer
+    | JSXSpreadAttribute
+    | JSXSpreadChild
+    | LogicalExpression
+    | MemberExpression
+    | NewExpression
+    | ObjectMethod
+    | ObjectProperty
+    | OptionalCallExpression
+    | OptionalMemberExpression
+    | ParenthesizedExpression
+    | PipelineBareFunction
+    | PipelineTopicExpression
+    | ReturnStatement
+    | SequenceExpression
+    | SpreadElement
+    | SwitchCase
+    | SwitchStatement
+    | TSAsExpression
+    | TSDeclareMethod
+    | TSEnumDeclaration
+    | TSEnumMember
+    | TSExportAssignment
+    | TSInstantiationExpression
+    | TSMethodSignature
+    | TSNonNullExpression
+    | TSPropertySignature
+    | TSSatisfiesExpression
+    | TSTypeAssertion
+    | TaggedTemplateExpression
+    | TemplateLiteral
+    | ThrowStatement
+    | TupleExpression
+    | TypeCastExpression
+    | UnaryExpression
+    | UpdateExpression
+    | VariableDeclarator
+    | WhileStatement
+    | WithStatement
+    | YieldExpression;
+  TryStatement:
+    | BlockStatement
+    | DoWhileStatement
+    | ForInStatement
+    | ForOfStatement
+    | ForStatement
+    | IfStatement
+    | LabeledStatement
+    | Program
+    | StaticBlock
+    | SwitchCase
+    | TSModuleBlock
+    | WhileStatement
+    | WithStatement;
+  TupleExpression:
+    | ArrayExpression
+    | ArrowFunctionExpression
+    | AssignmentExpression
+    | AssignmentPattern
+    | AwaitExpression
+    | BinaryExpression
+    | BindExpression
+    | CallExpression
+    | ClassAccessorProperty
+    | ClassDeclaration
+    | ClassExpression
+    | ClassMethod
+    | ClassPrivateProperty
+    | ClassProperty
+    | ConditionalExpression
+    | Decorator
+    | DoWhileStatement
+    | ExportDefaultDeclaration
+    | ExpressionStatement
+    | ForInStatement
+    | ForOfStatement
+    | ForStatement
+    | IfStatement
+    | JSXExpressionContainer
+    | JSXSpreadAttribute
+    | JSXSpreadChild
+    | LogicalExpression
+    | MemberExpression
+    | NewExpression
+    | ObjectMethod
+    | ObjectProperty
+    | OptionalCallExpression
+    | OptionalMemberExpression
+    | ParenthesizedExpression
+    | PipelineBareFunction
+    | PipelineTopicExpression
+    | ReturnStatement
+    | SequenceExpression
+    | SpreadElement
+    | SwitchCase
+    | SwitchStatement
+    | TSAsExpression
+    | TSDeclareMethod
+    | TSEnumDeclaration
+    | TSEnumMember
+    | TSExportAssignment
+    | TSInstantiationExpression
+    | TSMethodSignature
+    | TSNonNullExpression
+    | TSPropertySignature
+    | TSSatisfiesExpression
+    | TSTypeAssertion
+    | TaggedTemplateExpression
+    | TemplateLiteral
+    | ThrowStatement
+    | TupleExpression
+    | TypeCastExpression
+    | UnaryExpression
+    | UpdateExpression
+    | VariableDeclarator
+    | WhileStatement
+    | WithStatement
+    | YieldExpression;
+  TupleTypeAnnotation:
+    | ArrayTypeAnnotation
+    | DeclareExportDeclaration
+    | DeclareOpaqueType
+    | DeclareTypeAlias
+    | DeclaredPredicate
+    | FunctionTypeAnnotation
+    | FunctionTypeParam
+    | IndexedAccessType
+    | IntersectionTypeAnnotation
+    | NullableTypeAnnotation
+    | ObjectTypeCallProperty
+    | ObjectTypeIndexer
+    | ObjectTypeInternalSlot
+    | ObjectTypeProperty
+    | ObjectTypeSpreadProperty
+    | OpaqueType
+    | OptionalIndexedAccessType
+    | TupleTypeAnnotation
+    | TypeAlias
+    | TypeAnnotation
+    | TypeParameter
+    | TypeParameterInstantiation
+    | TypeofTypeAnnotation
+    | UnionTypeAnnotation;
+  TypeAlias:
+    | BlockStatement
+    | DeclareExportDeclaration
+    | DeclaredPredicate
+    | DoWhileStatement
+    | ExportNamedDeclaration
+    | ForInStatement
+    | ForOfStatement
+    | ForStatement
+    | IfStatement
+    | LabeledStatement
+    | Program
+    | StaticBlock
+    | SwitchCase
+    | TSModuleBlock
+    | WhileStatement
+    | WithStatement;
+  TypeAnnotation:
+    | ArrayPattern
+    | ArrowFunctionExpression
+    | AssignmentPattern
+    | ClassAccessorProperty
+    | ClassMethod
+    | ClassPrivateMethod
+    | ClassPrivateProperty
+    | ClassProperty
+    | DeclareExportDeclaration
+    | DeclareModuleExports
+    | DeclaredPredicate
+    | FunctionDeclaration
+    | FunctionExpression
+    | Identifier
+    | ObjectMethod
+    | ObjectPattern
+    | RestElement
+    | TypeCastExpression
+    | TypeParameter;
+  TypeCastExpression:
+    | ArrayExpression
+    | ArrowFunctionExpression
+    | AssignmentExpression
+    | AssignmentPattern
+    | AwaitExpression
+    | BinaryExpression
+    | BindExpression
+    | CallExpression
+    | ClassAccessorProperty
+    | ClassDeclaration
+    | ClassExpression
+    | ClassMethod
+    | ClassPrivateProperty
+    | ClassProperty
+    | ConditionalExpression
+    | DeclareExportDeclaration
+    | DeclaredPredicate
+    | Decorator
+    | DoWhileStatement
+    | ExportDefaultDeclaration
+    | ExpressionStatement
+    | ForInStatement
+    | ForOfStatement
+    | ForStatement
+    | IfStatement
+    | JSXExpressionContainer
+    | JSXSpreadAttribute
+    | JSXSpreadChild
+    | LogicalExpression
+    | MemberExpression
+    | NewExpression
+    | ObjectMethod
+    | ObjectProperty
+    | OptionalCallExpression
+    | OptionalMemberExpression
+    | ParenthesizedExpression
+    | PipelineBareFunction
+    | PipelineTopicExpression
+    | ReturnStatement
+    | SequenceExpression
+    | SpreadElement
+    | SwitchCase
+    | SwitchStatement
+    | TSAsExpression
+    | TSDeclareMethod
+    | TSEnumDeclaration
+    | TSEnumMember
+    | TSExportAssignment
+    | TSInstantiationExpression
+    | TSMethodSignature
+    | TSNonNullExpression
+    | TSPropertySignature
+    | TSSatisfiesExpression
+    | TSTypeAssertion
+    | TaggedTemplateExpression
+    | TemplateLiteral
+    | ThrowStatement
+    | TupleExpression
+    | TypeCastExpression
+    | UnaryExpression
+    | UpdateExpression
+    | VariableDeclarator
+    | WhileStatement
+    | WithStatement
+    | YieldExpression;
+  TypeParameter:
+    | DeclareExportDeclaration
+    | DeclaredPredicate
+    | TypeParameterDeclaration;
+  TypeParameterDeclaration:
+    | ArrowFunctionExpression
+    | ClassDeclaration
+    | ClassExpression
+    | ClassMethod
+    | ClassPrivateMethod
+    | DeclareClass
+    | DeclareExportDeclaration
+    | DeclareInterface
+    | DeclareOpaqueType
+    | DeclareTypeAlias
+    | DeclaredPredicate
+    | FunctionDeclaration
+    | FunctionExpression
+    | FunctionTypeAnnotation
+    | InterfaceDeclaration
+    | ObjectMethod
+    | OpaqueType
+    | TypeAlias;
+  TypeParameterInstantiation:
+    | CallExpression
+    | ClassDeclaration
+    | ClassExpression
+    | ClassImplements
+    | DeclareExportDeclaration
+    | DeclaredPredicate
+    | GenericTypeAnnotation
+    | InterfaceExtends
+    | JSXOpeningElement
+    | NewExpression
+    | OptionalCallExpression
+    | TaggedTemplateExpression;
+  TypeofTypeAnnotation:
+    | ArrayTypeAnnotation
+    | DeclareExportDeclaration
+    | DeclareOpaqueType
+    | DeclareTypeAlias
+    | DeclaredPredicate
+    | FunctionTypeAnnotation
+    | FunctionTypeParam
+    | IndexedAccessType
+    | IntersectionTypeAnnotation
+    | NullableTypeAnnotation
+    | ObjectTypeCallProperty
+    | ObjectTypeIndexer
+    | ObjectTypeInternalSlot
+    | ObjectTypeProperty
+    | ObjectTypeSpreadProperty
+    | OpaqueType
+    | OptionalIndexedAccessType
+    | TupleTypeAnnotation
+    | TypeAlias
+    | TypeAnnotation
+    | TypeParameter
+    | TypeParameterInstantiation
+    | TypeofTypeAnnotation
+    | UnionTypeAnnotation;
+  UnaryExpression:
+    | ArrayExpression
+    | ArrowFunctionExpression
+    | AssignmentExpression
+    | AssignmentPattern
+    | AwaitExpression
+    | BinaryExpression
+    | BindExpression
+    | CallExpression
+    | ClassAccessorProperty
+    | ClassDeclaration
+    | ClassExpression
+    | ClassMethod
+    | ClassPrivateProperty
+    | ClassProperty
+    | ConditionalExpression
+    | Decorator
+    | DoWhileStatement
+    | ExportDefaultDeclaration
+    | ExpressionStatement
+    | ForInStatement
+    | ForOfStatement
+    | ForStatement
+    | IfStatement
+    | JSXExpressionContainer
+    | JSXSpreadAttribute
+    | JSXSpreadChild
+    | LogicalExpression
+    | MemberExpression
+    | NewExpression
+    | ObjectMethod
+    | ObjectProperty
+    | OptionalCallExpression
+    | OptionalMemberExpression
+    | ParenthesizedExpression
+    | PipelineBareFunction
+    | PipelineTopicExpression
+    | ReturnStatement
+    | SequenceExpression
+    | SpreadElement
+    | SwitchCase
+    | SwitchStatement
+    | TSAsExpression
+    | TSDeclareMethod
+    | TSEnumDeclaration
+    | TSEnumMember
+    | TSExportAssignment
+    | TSInstantiationExpression
+    | TSLiteralType
+    | TSMethodSignature
+    | TSNonNullExpression
+    | TSPropertySignature
+    | TSSatisfiesExpression
+    | TSTypeAssertion
+    | TaggedTemplateExpression
+    | TemplateLiteral
+    | ThrowStatement
+    | TupleExpression
+    | TypeCastExpression
+    | UnaryExpression
+    | UpdateExpression
+    | VariableDeclarator
+    | WhileStatement
+    | WithStatement
+    | YieldExpression;
+  UnionTypeAnnotation:
+    | ArrayTypeAnnotation
+    | DeclareExportDeclaration
+    | DeclareOpaqueType
+    | DeclareTypeAlias
+    | DeclaredPredicate
+    | FunctionTypeAnnotation
+    | FunctionTypeParam
+    | IndexedAccessType
+    | IntersectionTypeAnnotation
+    | NullableTypeAnnotation
+    | ObjectTypeCallProperty
+    | ObjectTypeIndexer
+    | ObjectTypeInternalSlot
+    | ObjectTypeProperty
+    | ObjectTypeSpreadProperty
+    | OpaqueType
+    | OptionalIndexedAccessType
+    | TupleTypeAnnotation
+    | TypeAlias
+    | TypeAnnotation
+    | TypeParameter
+    | TypeParameterInstantiation
+    | TypeofTypeAnnotation
+    | UnionTypeAnnotation;
+  UpdateExpression:
+    | ArrayExpression
+    | ArrowFunctionExpression
+    | AssignmentExpression
+    | AssignmentPattern
+    | AwaitExpression
+    | BinaryExpression
+    | BindExpression
+    | CallExpression
+    | ClassAccessorProperty
+    | ClassDeclaration
+    | ClassExpression
+    | ClassMethod
+    | ClassPrivateProperty
+    | ClassProperty
+    | ConditionalExpression
+    | Decorator
+    | DoWhileStatement
+    | ExportDefaultDeclaration
+    | ExpressionStatement
+    | ForInStatement
+    | ForOfStatement
+    | ForStatement
+    | IfStatement
+    | JSXExpressionContainer
+    | JSXSpreadAttribute
+    | JSXSpreadChild
+    | LogicalExpression
+    | MemberExpression
+    | NewExpression
+    | ObjectMethod
+    | ObjectProperty
+    | OptionalCallExpression
+    | OptionalMemberExpression
+    | ParenthesizedExpression
+    | PipelineBareFunction
+    | PipelineTopicExpression
+    | ReturnStatement
+    | SequenceExpression
+    | SpreadElement
+    | SwitchCase
+    | SwitchStatement
+    | TSAsExpression
+    | TSDeclareMethod
+    | TSEnumDeclaration
+    | TSEnumMember
+    | TSExportAssignment
+    | TSInstantiationExpression
+    | TSMethodSignature
+    | TSNonNullExpression
+    | TSPropertySignature
+    | TSSatisfiesExpression
+    | TSTypeAssertion
+    | TaggedTemplateExpression
+    | TemplateLiteral
+    | ThrowStatement
+    | TupleExpression
+    | TypeCastExpression
+    | UnaryExpression
+    | UpdateExpression
+    | VariableDeclarator
+    | WhileStatement
+    | WithStatement
+    | YieldExpression;
+  V8IntrinsicIdentifier: CallExpression | NewExpression;
+  VariableDeclaration:
+    | BlockStatement
+    | DoWhileStatement
+    | ExportNamedDeclaration
+    | ForInStatement
+    | ForOfStatement
+    | ForStatement
+    | IfStatement
+    | LabeledStatement
+    | Program
+    | StaticBlock
+    | SwitchCase
+    | TSModuleBlock
+    | WhileStatement
+    | WithStatement;
+  VariableDeclarator: VariableDeclaration;
+  Variance:
+    | ClassAccessorProperty
+    | ClassPrivateProperty
+    | ClassProperty
+    | DeclareExportDeclaration
+    | DeclaredPredicate
+    | ObjectTypeIndexer
+    | ObjectTypeProperty
+    | TypeParameter;
+  VoidTypeAnnotation:
+    | ArrayTypeAnnotation
+    | DeclareExportDeclaration
+    | DeclareOpaqueType
+    | DeclareTypeAlias
+    | DeclaredPredicate
+    | FunctionTypeAnnotation
+    | FunctionTypeParam
+    | IndexedAccessType
+    | IntersectionTypeAnnotation
+    | NullableTypeAnnotation
+    | ObjectTypeCallProperty
+    | ObjectTypeIndexer
+    | ObjectTypeInternalSlot
+    | ObjectTypeProperty
+    | ObjectTypeSpreadProperty
+    | OpaqueType
+    | OptionalIndexedAccessType
+    | TupleTypeAnnotation
+    | TypeAlias
+    | TypeAnnotation
+    | TypeParameter
+    | TypeParameterInstantiation
+    | TypeofTypeAnnotation
+    | UnionTypeAnnotation;
+  WhileStatement:
+    | BlockStatement
+    | DoWhileStatement
+    | ForInStatement
+    | ForOfStatement
+    | ForStatement
+    | IfStatement
+    | LabeledStatement
+    | Program
+    | StaticBlock
+    | SwitchCase
+    | TSModuleBlock
+    | WhileStatement
+    | WithStatement;
+  WithStatement:
+    | BlockStatement
+    | DoWhileStatement
+    | ForInStatement
+    | ForOfStatement
+    | ForStatement
+    | IfStatement
+    | LabeledStatement
+    | Program
+    | StaticBlock
+    | SwitchCase
+    | TSModuleBlock
+    | WhileStatement
+    | WithStatement;
+  YieldExpression:
+    | ArrayExpression
+    | ArrowFunctionExpression
+    | AssignmentExpression
+    | AssignmentPattern
+    | AwaitExpression
+    | BinaryExpression
+    | BindExpression
+    | CallExpression
+    | ClassAccessorProperty
+    | ClassDeclaration
+    | ClassExpression
+    | ClassMethod
+    | ClassPrivateProperty
+    | ClassProperty
+    | ConditionalExpression
+    | Decorator
+    | DoWhileStatement
+    | ExportDefaultDeclaration
+    | ExpressionStatement
+    | ForInStatement
+    | ForOfStatement
+    | ForStatement
+    | IfStatement
+    | JSXExpressionContainer
+    | JSXSpreadAttribute
+    | JSXSpreadChild
+    | LogicalExpression
+    | MemberExpression
+    | NewExpression
+    | ObjectMethod
+    | ObjectProperty
+    | OptionalCallExpression
+    | OptionalMemberExpression
+    | ParenthesizedExpression
+    | PipelineBareFunction
+    | PipelineTopicExpression
+    | ReturnStatement
+    | SequenceExpression
+    | SpreadElement
+    | SwitchCase
+    | SwitchStatement
+    | TSAsExpression
+    | TSDeclareMethod
+    | TSEnumDeclaration
+    | TSEnumMember
+    | TSExportAssignment
+    | TSInstantiationExpression
+    | TSMethodSignature
+    | TSNonNullExpression
+    | TSPropertySignature
+    | TSSatisfiesExpression
+    | TSTypeAssertion
+    | TaggedTemplateExpression
+    | TemplateLiteral
+    | ThrowStatement
+    | TupleExpression
+    | TypeCastExpression
+    | UnaryExpression
+    | UpdateExpression
+    | VariableDeclarator
+    | WhileStatement
+    | WithStatement
+    | YieldExpression;
 }

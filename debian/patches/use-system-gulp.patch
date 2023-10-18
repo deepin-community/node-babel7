@@ -1,87 +1,55 @@
 Description: Use system gulp
 Forwarded: not-needed
-Reviewed-By: Xavier Guimard <yadd@debian.org>
-Last-Update: 2021-01-04
+Reviewed-By: Yadd <yadd@debian.org>
+Last-Update: 2022-07-19
 
 --- a/Makefile
 +++ b/Makefile
-@@ -24,7 +24,11 @@
- endif
+@@ -12,8 +12,14 @@
+ SPACE := $(EMPTY) $(EMPTY)
+ COMMA_SEPARATED_SOURCES = $(subst $(SPACE),$(COMMA),$(SOURCES))
  
- build-bundle: clean clean-lib
--	$(YARN) gulp build
-+ifeq (,$(filter npm,$(DEB_BUILD_OPTIONS) $(DEB_BUILD_PROFILES)))
-+	gulp build
+-YARN := yarn
++YARN := yarnpkg
++ifeq (,$(filter pkg.node-babel7.yarnpkg,$(DEB_BUILD_OPTIONS) $(DEB_BUILD_PROFILES)))
++PREFIX=
++NODE := node
 +else
-+	./node_modules/.bin/gulp build
++PREFIX=./node_modules/.bin/
+ NODE := $(YARN) node
 +endif
+ MAKEJS := node Makefile.js
+ 
+ 
+@@ -118,11 +124,11 @@
+ 
+ 
+ build-no-bundle-ci: bootstrap-only
+-	$(YARN) gulp build-dev
++	$(PREFIX)gulp build-dev
  	$(MAKE) build-flow-typings
  	$(MAKE) build-dist
  
-@@ -35,7 +39,11 @@
- 	$(NODE) scripts/generators/tsconfig.js
+-# Does not work on Windows; use "$(YARN) jest" instead
++# Does not work on Windows; use "$(PREFIX)jest" instead
+ test-only:
+ 	BABEL_ENV=test ./scripts/test.sh
+ 	$(MAKE) test-clean
+@@ -202,7 +208,7 @@
+ new-version:
+ 	$(MAKE) new-version-checklist
+ 	git pull --rebase
+-	$(YARN) release-tool version -f @babel/standalone
++	$(PREFIX)release-tool version -f @babel/standalone
  
- generate-type-helpers:
--	$(YARN) gulp generate-type-helpers
-+ifeq (,$(filter npm,$(DEB_BUILD_OPTIONS) $(DEB_BUILD_PROFILES)))
-+	gulp generate-type-helpers
-+else
-+	./node_modules/.bin/gulp generate-type-helpers
-+endif
+ # NOTE: Run make new-version first
+ publish:
+@@ -212,7 +218,7 @@
+ 		exit 1; \
+ 	fi
+ 	$(MAKE) prepublish
+-	$(YARN) release-tool publish
++	$(PREFIX)release-tool publish
+ 	$(MAKE) clean
  
- build-flow-typings:
- 	$(NODE) packages/babel-types/scripts/generators/flow.js > packages/babel-types/lib/index.js.flow
-@@ -50,10 +58,18 @@
- 	$(MAKE) build-standalone
- 
- build-babel-standalone:
--	$(YARN) gulp build-babel-standalone
-+ifeq (,$(filter npm,$(DEB_BUILD_OPTIONS) $(DEB_BUILD_PROFILES)))
-+	gulp build-babel-standalone
-+else
-+	./node_modules/.bin/gulp build-babel-standalone
-+endif
- 
- prepublish-build-standalone:
--	BABEL_ENV=production IS_PUBLISH=true $(YARN) gulp build-babel-standalone
-+ifeq (,$(filter npm,$(DEB_BUILD_OPTIONS) $(DEB_BUILD_PROFILES)))
-+	BABEL_ENV=production IS_PUBLISH=true gulp build-babel-standalone
-+else
-+	BABEL_ENV=production IS_PUBLISH=true ./node_modules/.bin/gulp build-babel-standalone
-+endif
- 
- build-dist: build-plugin-transform-runtime-dist
- 
-@@ -62,13 +78,21 @@
- 	$(NODE) scripts/build-dist.js
- 
- build-no-bundle: clean clean-lib
--	BABEL_ENV=development $(YARN) gulp build-dev
-+ifeq (,$(filter npm,$(DEB_BUILD_OPTIONS) $(DEB_BUILD_PROFILES)))
-+	BABEL_ENV=development gulp build-dev
-+else
-+	BABEL_ENV=development ./node_modules/.bin/gulp build-dev
-+endif
- 	# Ensure that build artifacts for types are created during local
- 	# development too.
- 	$(MAKE) build-flow-typings
- 
- watch: build-no-bundle
--	BABEL_ENV=development $(YARN) gulp watch
-+ifeq (,$(filter npm,$(DEB_BUILD_OPTIONS) $(DEB_BUILD_PROFILES)))
-+	BABEL_ENV=development gulp watch
-+else
-+	BABEL_ENV=development gulp watch
-+endif
- 
- flowcheck-ci:
- 	$(MAKE) flow
-@@ -76,7 +100,7 @@
- code-quality: tscheck flow lint
- 
- tscheck: generate-tsconfig
--	$(YARN) tsc -b .
-+	tsc -b .
- 
- flow: build-flow-typings
- 	$(YARN) flow check --strip-root
+ publish-test:

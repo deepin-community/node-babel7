@@ -1,5 +1,7 @@
-import traverse from "../lib";
 import { parse } from "@babel/parser";
+
+import _traverse from "../lib/index.js";
+const traverse = _traverse.default || _traverse;
 
 function getPath(code) {
   const ast = parse(code);
@@ -34,13 +36,13 @@ function addDeoptTest(code, type, expectedType) {
 
 describe("evaluation", function () {
   describe("evaluateTruthy", function () {
-    it("it should work with null", function () {
+    it("should work with null", function () {
       expect(
         getPath("false || a.length === 0;").get("body")[0].evaluateTruthy(),
       ).toBeUndefined();
     });
 
-    it("it should not mistake lack of confidence for falsy", function () {
+    it("should not mistake lack of confidence for falsy", function () {
       expect(
         getPath("foo || 'bar'").get("body")[0].evaluate().value,
       ).toBeUndefined();
@@ -64,6 +66,14 @@ describe("evaluation", function () {
     );
     expect(getPath("42 || x === 'y'").get("body")[0].evaluate().value).toBe(42);
     expect(getPath("0 && x === 'y'").get("body")[0].evaluate().value).toBe(0);
+  });
+
+  it("should handle ??", function () {
+    expect(getPath("null ?? 42").get("body")[0].evaluate().value).toBe(42);
+    expect(getPath("void 0 ?? 42").get("body")[0].evaluate().value).toBe(42);
+    expect(getPath("0 ?? 42").get("body")[0].evaluate().value).toBe(0);
+    expect(getPath("x ?? 42").get("body")[0].evaluate().confident).toBe(false);
+    expect(getPath("42 ?? x === 'y'").get("body")[0].evaluate().value).toBe(42);
   });
 
   it("should work with repeated, indeterminate identifiers", function () {
@@ -90,12 +100,27 @@ describe("evaluation", function () {
     ).toBe(false);
   });
 
-  it("should evaluate template literals", function () {
-    expect(
-      getPath("var x = 8; var y = 1; var z = `value is ${x >>> y}`")
-        .get("body.2.declarations.0.init")
-        .evaluate().value,
-    ).toBe("value is 4");
+  describe("template literals", function () {
+    it("should evaluate template literals", function () {
+      expect(
+        getPath("var x = 8; var y = 1; var z = `value is ${x >>> y}`")
+          .get("body.2.declarations.0.init")
+          .evaluate().value,
+      ).toBe("value is 4");
+    });
+
+    it("shold evaluate String.raw tags", function () {
+      expect(
+        getPath("String.raw`a\\n${1}\\u`;").get("body.0.expression").evaluate()
+          .value,
+      ).toBe("a\\n1\\u");
+    });
+
+    addDeoptTest(
+      "a`x${b}y`",
+      "TaggedTemplateExpression",
+      "TaggedTemplateExpression",
+    );
   });
 
   it("should evaluate member expressions", function () {
@@ -104,6 +129,16 @@ describe("evaluation", function () {
         .get("body.0.declarations.0.init")
         .evaluate().value,
     ).toBe(3);
+    expect(
+      getPath("var x = 'hello world'[6]")
+        .get("body.0.declarations.0.init")
+        .evaluate().value,
+    ).toBe("w");
+    expect(
+      getPath("var length = 1; var x = 'abc'[length];")
+        .get("body.1.declarations.0.init")
+        .evaluate().value,
+    ).toBe("b");
     const member_expr = getPath(
       "var x = Math.min(2,Math.max(3,4));var y = Math.random();",
     );
@@ -117,7 +152,7 @@ describe("evaluation", function () {
     expect(eval_invalid_call.confident).toBe(false);
   });
 
-  it("it should not deopt vars in different scope", function () {
+  it("should not deopt vars in different scope", function () {
     const input =
       "var a = 5; function x() { var a = 5; var b = a + 1; } var b = a + 2";
     expect(
@@ -129,7 +164,7 @@ describe("evaluation", function () {
     ).toBe(7);
   });
 
-  it("it should not deopt let/const inside blocks", function () {
+  it("should not deopt let/const inside blocks", function () {
     expect(
       getPath("let x = 5; { let x = 1; } let y = x + 5")
         .get("body.2.declarations.0.init")

@@ -1,0 +1,34 @@
+Description: add fix for rollup 3
+Author: Yadd <yadd@debian.org>
+Forwarded: no
+Last-Update: 2022-11-04
+
+--- a/Gulpfile.mjs
++++ b/Gulpfile.mjs
+@@ -473,7 +473,7 @@
+             // We have manually applied commonjs-esm interop to the source
+             // for library not in this monorepo
+             // https://github.com/babel/babel/pull/12795
+-            if (!id.startsWith("@babel/")) return false;
++            if (!id.startsWith("@babel/")) return 'auto';
+ 
+             // Some syntax plugins have been archived
+             if (id.includes("plugin-syntax")) {
+@@ -481,14 +481,14 @@
+                 "./packages/" + id.replace("@babel/", "babel-"),
+                 import.meta.url
+               );
+-              if (!fs.existsSync(srcPath)) return false;
++              if (!fs.existsSync(srcPath)) return 'auto';
+             }
+ 
+             if (id.includes("@babel/preset-modules")) {
+-              return false;
++              return 'auto';
+             }
+ 
+-            return true;
++            return 'auto';
+           },
+         });
+ 

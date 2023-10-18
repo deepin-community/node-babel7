@@ -1,0 +1,15 @@
+Description: drop prebuild
+Author: Yadd <yadd@debian.org>
+Forwarded: not-needed
+Last-Update: 2021-12-18
+
+--- a/babel-plugin-transform-replace-object-assign/package.json
++++ b/babel-plugin-transform-replace-object-assign/package.json
+@@ -15,7 +15,6 @@
+     "build": "babel src --out-dir lib",
+     "bump-changelog": "./bump-changelog",
+     "postversion": "git push && git push --tags",
+-    "prebuild": "npm test && rm -rf lib/",
+     "prepublish": "npm run build",
+     "test": "istanbul test _mocha",
+     "version": "npm run build && npm run bump-changelog && git add -A lib CHANGELOG.md"

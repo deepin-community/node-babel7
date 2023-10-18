@@ -1,0 +1,16 @@
+Description: allow babel-preset-moxy to require lib/module-transformations
+Author: Yadd <yadd@debian.org>
+Bug-Debian: https://bugs.debian.org/1006061
+Forwarded: no
+Last-Update: 2022-02-19
+
+--- a/packages/babel-preset-env/package.json
++++ b/packages/babel-preset-env/package.json
+@@ -120,6 +120,7 @@
+   },
+   "exports": {
+     ".": "./lib/index.js",
++    "./lib/module-transformations": "./lib/module-transformations.js",
+     "./package.json": "./package.json"
+   },
+   "type": "commonjs"
