@@ -19,3 +19,6 @@ tsc-workaround.patch
 ignore-rollup-warnings-for-standalone.patch
 fix-for-rollup-3.patch
 CVE-2023-45133.patch
+
+# newer node-lru-cache
+0018-Update-to-newer-lru-cache.patch

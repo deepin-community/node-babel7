@@ -1,0 +1,45 @@
+From: =?utf-8?q?Bastien_Roucari=C3=A8s?= <rouca@debian.org>
+Date: Tue, 6 Aug 2024 14:00:41 +0000
+Subject: Update to newer lru-cache
+
+forwarded: not-needed
+---
+ packages/babel-helper-compilation-targets/package.json | 4 ++--
+ packages/babel-helper-compilation-targets/src/index.ts | 2 +-
+ 2 files changed, 3 insertions(+), 3 deletions(-)
+
+diff --git a/packages/babel-helper-compilation-targets/package.json b/packages/babel-helper-compilation-targets/package.json
+index 302a329..8cb66bd 100644
+--- a/packages/babel-helper-compilation-targets/package.json
++++ b/packages/babel-helper-compilation-targets/package.json
+@@ -25,7 +25,7 @@
+     "@babel/compat-data": "workspace:^",
+     "@babel/helper-validator-option": "workspace:^",
+     "browserslist": "^4.21.3",
+-    "lru-cache": "condition:BABEL_8_BREAKING ? ^7.14.1 : ^5.1.1",
++    "lru-cache": "^10.0.1",
+     "semver": "condition:BABEL_8_BREAKING ? ^7.3.4 : ^6.3.0"
+   },
+   "peerDependencies": {
+@@ -34,7 +34,7 @@
+   "devDependencies": {
+     "@babel/core": "workspace:^",
+     "@babel/helper-plugin-test-runner": "workspace:^",
+-    "@types/lru-cache": "^5.1.1",
++    "@types/lru-cache": "^10.0.1",
+     "@types/semver": "^5.5.0"
+   },
+   "engines": {
+diff --git a/packages/babel-helper-compilation-targets/src/index.ts b/packages/babel-helper-compilation-targets/src/index.ts
+index f931946..5a85751 100644
+--- a/packages/babel-helper-compilation-targets/src/index.ts
++++ b/packages/babel-helper-compilation-targets/src/index.ts
+@@ -1,7 +1,7 @@
+ import browserslist from "browserslist";
+ import { findSuggestion } from "@babel/helper-validator-option";
+ import browserModulesData from "@babel/compat-data/native-modules";
+-import LruCache from "lru-cache";
++import { LRUCache as LruCache } from "lru-cache";
+ 
+ import {
+   semverify,
