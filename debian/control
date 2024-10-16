@@ -37,7 +37,7 @@ Build-Depends: debhelper-compat (= 13)
  , node-jest-worker
  , node-jsdom
  , node-leven (>= 3.1.0+~cs1.1.1)
- , node-lru-cache
+ , node-lru-cache (>= 10.0.1-2~)
  , node-liftoff (>= 3.1.0-4~)
  , node-lodash (>= 4.17.19+dfsg1~)
  , node-lodash-packages
@@ -105,6 +105,7 @@ Depends: ${misc:Depends}
  , node-json5
  , node-lodash (>= 4.17.19+dfsg1~)
  , node-lodash-packages
+ , node-lru-cache (>= 10.0.1-2~)
  , node-make-dir
  , node-quick-lru
  , node-regenerator-transform (>= 0.14~)

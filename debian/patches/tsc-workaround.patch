@@ -1,7 +1,7 @@
 Description: tsc workaround
 Author: Yadd <yadd@debian.org>
 Forwarded: not-needed
-Last-Update: 2022-11-29
+Last-Update: 2023-12-12
 
 --- a/lib/third-party-libs.d.ts
 +++ b/lib/third-party-libs.d.ts
@@ -529,7 +529,20 @@ Last-Update: 2022-11-29
      // @ts-expect-error id is not defined in expressions other than function/class
 --- a/packages/babel-helper-transform-fixture-test-runner/src/index.ts
 +++ b/packages/babel-helper-transform-fixture-test-runner/src/index.ts
-@@ -141,7 +141,9 @@
+@@ -128,7 +128,6 @@
+   if (process.env.BABEL_8_BREAKING) {
+     script = new vm.Script(cached.code, {
+       filename,
+-      displayErrors: true,
+       lineOffset: -1,
+       cachedData: cached.cachedData,
+     });
+@@ -136,12 +135,13 @@
+   } else {
+     script = new vm.Script(cached.code, {
+       filename,
+-      displayErrors: true,
+       lineOffset: -1,
        cachedData: cached.cachedData,
        produceCachedData: true,
      });
